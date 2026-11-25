@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#dff4c8">
+<title>ZOMBIE EVOLUTION</title>
+<style>
+:root{
+ --bg:#dff4c8;--panel:#f8f4d8;--panel2:#e9f5c8;--line:#6e9e55;
+ --lime:#79c94b;--muted:#55734b;--white:#263d2b;--red:#e85b55;--gold:#e7b83f;
+ --darkgreen:#3f8248;--mint:#b9e89a
+}
+*{box-sizing:border-box}
+body{margin:0;background:#cce9b2;color:var(--white);font-family:monospace;min-height:100vh}
+.app{max-width:520px;margin:auto;min-height:100vh;padding:12px 13px 88px;background:linear-gradient(180deg,#eaf8d5,#d5efb9 55%,#c7e6a8)}
+header{display:flex;align-items:center;justify-content:space-between;padding:5px 2px 14px}
+.brand{font-weight:900;font-size:17px;letter-spacing:1px;color:#438b42;text-shadow:1px 1px #fff}
+.brand small{display:block;color:#648456;font-size:9px;letter-spacing:2px;margin-top:3px;text-shadow:none}
+.resources{display:flex;gap:7px}
+.pill{background:#fffbe6;border:2px solid #8bb86c;border-radius:7px;padding:7px 9px;font-size:11px;white-space:nowrap;box-shadow:0 2px 0 #a9c991}
+.playerline{display:flex;align-items:center;gap:10px;background:#fffbe6;border:2px solid #8bb86c;border-radius:9px;padding:9px 11px;margin-bottom:12px;box-shadow:0 3px 0 #b2d49a}
+.avatar{width:40px;height:40px;border:2px solid #83ae65;border-radius:7px;background:#d9efbd;display:grid;place-items:center;font-size:25px}
+.playerinfo{flex:1;min-width:0}
+.playerinfo strong{font-size:13px;color:#438b42}
+.playerinfo small{display:block;color:var(--muted);font-size:10px;margin-top:4px}
+.xpbar{height:8px;background:#d5dfc4;border:1px solid #8fae76;border-radius:2px;margin-top:6px;overflow:hidden}
+.xpbar i{display:block;height:100%;background:linear-gradient(90deg,#a4e75d,#62bd48)}
+.screen{display:none}.screen.active{display:block}
+.arena-card{background:#fffbe6;border:2px solid #6e9e55;border-radius:9px;overflow:hidden;box-shadow:0 3px 0 #b2d49a}
+.arena-top{display:flex;justify-content:space-between;align-items:center;padding:11px 12px;font-size:11px;color:#55734b;border-bottom:2px solid #c5dda9}
+.status{color:#438b42;font-weight:bold}
+.arena{height:245px;position:relative;overflow:hidden;background:linear-gradient(180deg,#8bd8f2 0%,#b6eafa 53%,#8dcf65 54%,#75bd55 100%)}
+.arena:before{content:"";position:absolute;left:-10%;right:-10%;bottom:18px;height:72px;background:#72b951;border:3px solid #579849;border-radius:50%}
+.arena:after{content:"";position:absolute;left:-10%;right:-10%;top:110px;height:35px;background:#a8dd75;border-radius:50%;opacity:.85}
+.sun{position:absolute;right:35px;top:23px;width:35px;height:35px;border-radius:50%;background:#ffe78b;border:2px solid #e6bd52;box-shadow:0 0 0 5px #fff4b344}
+.fighter{position:absolute;z-index:2;bottom:30px;width:43%;display:flex;flex-direction:column;align-items:center}
+.fighter.you{left:2%}.fighter.foe{right:2%}
+.monster{font-size:clamp(63px,19vw,91px);line-height:1.15;filter:drop-shadow(3px 4px 0 #527b48)}
+.you .monster{transform:scaleX(1)}.foe .monster{transform:scaleX(-1)}
+.fname{font-size:10px;font-weight:bold;color:#29432c;background:#fffbe6;padding:4px 8px;border:2px solid #6e9e55;border-radius:4px;margin-top:2px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hpmini{font-size:10px;color:#29432c;background:#fffbe6;border:2px solid #8bb86c;padding:4px 7px;border-radius:5px;margin-bottom:5px}
+.arena-bottom{padding:11px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fffbe6}
+.arena-bottom small{color:var(--muted);font-size:10px}.arena-bottom b{font-size:12px}
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 0 0}
+.action{border:2px solid #6e9e55;background:linear-gradient(#f8f4d8,#e7f2c9);color:#29432c;border-radius:7px;padding:13px 8px;font:bold 12px monospace;min-height:53px;box-shadow:0 3px 0 #a5c58b}
+.action:active{transform:translateY(2px);box-shadow:0 1px 0 #a5c58b}
+.action span{display:block;font-size:19px;margin-bottom:5px}
+.action.main{background:linear-gradient(#a9e875,#79c94b);border-color:#579849;color:#244126}
+.action:disabled{opacity:.4;box-shadow:none}
+.section-title{display:flex;align-items:center;justify-content:space-between;margin:6px 1px 10px}
+.section-title h2{font-size:14px;margin:0;color:#438b42}
+.section-title small{font-size:10px;color:var(--muted)}
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.stat{background:#fffbe6;border:2px solid #8bb86c;border-radius:8px;padding:14px;box-shadow:0 2px 0 #b2d49a}
+.stat span{display:block;color:var(--muted);font-size:10px}
+.stat b{display:block;font-size:22px;margin-top:7px;color:#315b36}
+.evo-card{background:linear-gradient(135deg,#f8f4d8,#e3f3c6);border:2px solid #78a85c;border-radius:9px;padding:15px;box-shadow:0 3px 0 #b2d49a}
+.evo-card .big{font-size:42px}
+.evo-card h3{margin:7px 0;color:#438b42;font-size:16px}
+.evo-card p{font-size:11px;line-height:1.6;color:#55734b}
+.wide{width:100%;border:2px solid #579849;border-radius:7px;background:linear-gradient(#a9e875,#79c94b);color:#244126;padding:14px;font:bold 13px monospace;box-shadow:0 3px 0 #a5c58b}
+.wide:active{transform:translateY(2px);box-shadow:0 1px 0 #a5c58b}
+.wide:disabled{opacity:.4;box-shadow:none}
+.log{margin-top:12px;background:#fffbe6;border:2px solid #8bb86c;border-radius:8px;padding:12px;font-size:11px;color:#55734b;line-height:1.7;max-height:145px;overflow:auto;white-space:pre-line}
+.notice{font-size:11px;color:#a16d18;min-height:17px;margin-top:8px}
+.bottomnav{position:fixed;z-index:10;bottom:0;left:0;right:0;background:#f4f2d9;border-top:2px solid #8bb86c;display:flex;justify-content:center;padding:8px 8px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -2px 8px #6e9e5522}
+.navinner{width:100%;max-width:520px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.navbtn{border:2px solid transparent;background:transparent;color:#66835a;border-radius:7px;padding:7px 3px;font:11px monospace}
+.navbtn span{display:block;font-size:20px;margin-bottom:3px}
+.navbtn.active{background:#d9efbd;border-color:#8bb86c;color:#397d3e;box-shadow:0 2px 0 #b2d49a}
+@media(min-width:480px){.arena{height:280px}}
+
+/* Ретро-анимации боя */
+.fighter{will-change:transform}
+.monster{position:relative;will-change:transform,filter}
+.fighter.you.attack-bite{animation:playerBite .48s ease}
+.fighter.you.attack-claw{animation:playerClaw .52s ease}
+.fighter.you.attack-special{animation:playerSpecial .72s ease}
+.fighter.you.guard-pose{animation:guardPose .45s ease}
+.fighter.foe.take-hit{animation:foeHit .42s ease}
+.fighter.foe.enemy-attack{animation:enemyLunge .48s ease}
+.fighter.you.take-hit{animation:playerHit .42s ease}
+.arena.hit-flash:after{content:"";position:absolute;inset:0;z-index:5;pointer-events:none;background:#fff8a8;animation:screenFlash .25s ease-out}
+.arena .battle-fx{position:absolute;z-index:6;left:50%;top:42%;transform:translate(-50%,-50%);font-size:42px;pointer-events:none;animation:fxPop .55s ease-out forwards;filter:drop-shadow(2px 3px #55734b)}
+.damage-pop{position:absolute;z-index:7;top:38%;left:50%;font:bold 18px monospace;color:#d7473e;text-shadow:2px 2px #fff;pointer-events:none;animation:damageFloat .75s ease-out forwards}
+@keyframes playerBite{0%,100%{transform:translateX(0)}35%{transform:translateX(55px) rotate(-8deg)}65%{transform:translateX(38px) rotate(5deg)}}
+@keyframes playerClaw{0%,100%{transform:translateX(0) rotate(0)}30%{transform:translateX(48px) rotate(-14deg)}55%{transform:translateX(40px) rotate(12deg)}}
+@keyframes playerSpecial{0%,100%{transform:translateX(0);filter:brightness(1)}25%{transform:translateX(8px) scale(1.13);filter:brightness(1.5) drop-shadow(0 0 12px #a6f05b)}65%{transform:translateX(56px) scale(1.08);filter:brightness(1.4) drop-shadow(0 0 15px #a6f05b)}}
+@keyframes guardPose{50%{transform:scale(.88) translateY(7px);filter:drop-shadow(0 0 9px #75bdf0)}}
+@keyframes foeHit{0%,100%{transform:translateX(0)}25%{transform:translateX(12px) rotate(9deg)}50%{transform:translateX(-10px) rotate(-8deg);filter:brightness(1.8)}75%{transform:translateX(6px)}}
+@keyframes enemyLunge{0%,100%{transform:translateX(0)}40%,65%{transform:translateX(-48px) rotate(8deg)}}
+@keyframes playerHit{0%,100%{transform:translateX(0)}25%{transform:translateX(-9px) rotate(-7deg);filter:brightness(1.8)}55%{transform:translateX(8px) rotate(6deg)}}
+@keyframes screenFlash{0%{opacity:.8}100%{opacity:0}}
+@keyframes fxPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(-20deg)}35%{opacity:1;transform:translate(-50%,-50%) scale(1.3) rotate(8deg)}100%{opacity:0;transform:translate(-50%,-75%) scale(.8)}}
+@keyframes damageFloat{0%{opacity:0;transform:translate(-50%,10px) scale(.6)}20%{opacity:1;transform:translate(-50%,-8px) scale(1.2)}100%{opacity:0;transform:translate(-50%,-48px) scale(1)}}
+@media(prefers-reduced-motion:reduce){.fighter,.monster,.battle-fx,.damage-pop{animation-duration:.01ms!important}}
+
+</style>
+</head>
+<body>
+<div class="app">
+<header><div class="brand">☣ ZOMBIE EVOLUTION<small>THE MUTATION PROJECT</small></div><div class="resources"><div class="pill">🧬 <b id="dna">0</b></div><div class="pill">⭐ <b id="levelTop">1</b></div></div></header>
+<div class="playerline"><div class="avatar" id="smallAvatar">🧟</div><div class="playerinfo"><strong id="rankName">ЗЕД · НОВИЧОК</strong><small>УРОВЕНЬ <b id="level">1</b> · ОПЫТ <b id="xpText">0/25</b></small><div class="xpbar"><i id="xpBar" style="width:0%"></i></div></div></div>
+
+<main>
+<section class="screen active" id="battleScreen">
+ <div class="arena-card">
+  <div class="arena-top"><b>ЗОНА СРАЖЕНИЯ</b><span class="status" id="battleStatus">● ОЖИДАНИЕ</span></div>
+  <div class="arena">
+   <div class="sun"></div>
+   <div class="fighter you"><div class="hpmini" id="myHp">❤️ 30/30</div><div class="monster" id="myMonster">🧟</div><div class="fname">ТВОЙ ЗОМБИ</div></div>
+   <div class="fighter foe"><div class="hpmini" id="foeHp">❤️ —</div><div class="monster" id="foeMonster">❔</div><div class="fname" id="foeName">ПРОТИВНИК</div></div>
+  </div>
+  <div class="arena-bottom"><div><b id="battleTitle">Ты в безопасности</b><br><small id="battleDesc">Найди противника, чтобы начать бой</small></div><button class="action main" id="hunt" style="min-height:42px;padding:8px 12px">НАЙТИ</button></div>
+ </div>
+ <div class="action-grid">
+  <button class="action" id="bite" disabled><span>🦷</span>Укус</button>
+  <button class="action" id="claw" disabled><span>👊</span>Удар когтями</button>
+  <button class="action" id="guard" disabled><span>🛡️</span>Защита</button>
+  <button class="action" id="special" disabled><span>🧬</span>Мутация</button>
+ </div>
+ <div class="notice" id="notice"></div>
+ <div class="log" id="log">[СИСТЕМА] Зед проснулся в заброшенном городе.
+[СИСТЕМА] Найди первого противника и начни эволюцию.</div>
+</section>
+
+<section class="screen" id="statsScreen">
+ <div class="section-title"><h2>ХАРАКТЕРИСТИКИ</h2><small>ТВОЙ МУТАНТ</small></div>
+ <div class="statgrid">
+  <div class="stat"><span>❤️ ЗДОРОВЬЕ</span><b id="statHp">30/30</b></div>
+  <div class="stat"><span>💥 СИЛА</span><b id="strength">5</b></div>
+  <div class="stat"><span>🛡️ ЗАЩИТА</span><b id="defense">1</b></div>
+  <div class="stat"><span>🧪 МУТАЦИЯ</span><b id="mutation">0</b></div>
+ </div>
+ <div class="log">Каждый новый уровень увеличивает силу, защиту и максимальное здоровье. Побеждай врагов, чтобы получать опыт и ДНК-образцы.</div>
+</section>
+
+<section class="screen" id="evoScreen">
+ <div class="section-title"><h2>ЛАБОРАТОРИЯ ЭВОЛЮЦИИ</h2><small>МУТАЦИИ</small></div>
+ <div class="evo-card"><div class="big" id="evoEmoji">🧟</div><h3 id="evoStage">НОВИЧОК</h3><p id="evoInfo">Достигни 3-го уровня и собери 10 ДНК-образцов, чтобы запустить первую мутацию.</p><button class="wide" id="evolve">🧬 ЭВОЛЮЦИОНИРОВАТЬ</button></div>
+ <div class="log">Эволюция меняет форму зомби и усиливает его тело. Каждая следующая стадия требует больше подготовки.</div>
+</section>
+</main>
+</div>
+<nav class="bottomnav"><div class="navinner">
+<button class="navbtn active" data-screen="battleScreen"><span>⚔️</span>БОЙ</button>
+<button class="navbtn" data-screen="statsScreen"><span>📊</span>СТАТЫ</button>
+<button class="navbtn" data-screen="evoScreen"><span>🧬</span>ЭВОЛЮЦИЯ</button>
+</div></nav>
+<script>
+const defaults={level:1,xp:0,hp:30,maxHp:30,strength:5,defense:1,mutation:0,dna:0,evolution:0};
+let p={...defaults};try{p={...p,...JSON.parse(localStorage.getItem("zombieSave")||"{}")}}catch(e){}
+let enemy=null,guarding=false;
+const $=id=>document.getElementById(id);
+const enemies=[["Бродячий охотник","🧟‍♂️"],["Голодный пёс","🐺"],["Городской мародёр","💀"],["Заражённый солдат","👾"]];
+function need(){return p.level*25}
+function stage(){return p.evolution>=3?"КОРОЛЬ МУТАНТОВ":p.evolution===2?"АЛЬФА-ЗОМБИ":p.evolution===1?"МУТАНТ":"НОВИЧОК"}
+function sprite(){return p.evolution>=3?"👹":p.evolution===2?"🧟‍♂️":p.evolution===1?"🧟":"🧟"}
+function save(){localStorage.setItem("zombieSave",JSON.stringify(p))}
+function say(t){$("log").textContent+="\n"+t;$("log").scrollTop=$("log").scrollHeight}
+
+function animateFighter(which,kind,emoji,damage){
+ const arena=document.querySelector(".arena"), fighter=$(which==="you"?"myMonster":"foeMonster").closest(".fighter");
+ if(!fighter||!arena)return;
+ fighter.classList.remove("attack-bite","attack-claw","attack-special","guard-pose","take-hit","enemy-attack");
+ void fighter.offsetWidth;
+ const cls=which==="you"?(kind==="guard"?"guard-pose":"attack-"+kind):(kind==="attack"?"enemy-attack":"take-hit");
+ fighter.classList.add(cls);
+ if(which==="foe"&&kind!=="attack"||which==="you"&&kind!=="guard"){
+  arena.classList.remove("hit-flash");void arena.offsetWidth;arena.classList.add("hit-flash");
+  const fx=document.createElement("div");fx.className="battle-fx";fx.textContent=emoji||"💥";arena.appendChild(fx);setTimeout(()=>fx.remove(),650);
+  if(damage){const pop=document.createElement("div");pop.className="damage-pop";pop.textContent="-"+damage;arena.appendChild(pop);setTimeout(()=>pop.remove(),800)}
+ }
+ setTimeout(()=>{fighter.classList.remove(cls);arena.classList.remove("hit-flash")},850);
+}
+
+function render(){
+ const hpPct=Math.max(0,100*p.hp/p.maxHp);
+ $("level").textContent=p.level;$("levelTop").textContent=p.level;$("xpText").textContent=p.xp+"/"+need();$("xpBar").style.width=(100*p.xp/need())+"%";
+ $("dna").textContent=p.dna;$("rankName").textContent="ЗЕД · "+stage();$("smallAvatar").textContent=sprite();
+ $("myMonster").textContent=sprite();$("myHp").textContent=`❤️ ${p.hp}/${p.maxHp}`;
+ $("statHp").textContent=p.hp+"/"+p.maxHp;$("strength").textContent=p.strength;$("defense").textContent=p.defense;$("mutation").textContent=p.mutation;
+ $("evoEmoji").textContent=sprite();$("evoStage").textContent=stage();
+ const cost=10+p.evolution*10,levelReq=3+p.evolution*5;
+ $("evoInfo").textContent=`Текущая стадия: ${stage()}. Следующая форма требует уровня ${levelReq} и ${cost} ДНК-образцов. Сейчас у тебя ${p.dna}.`;
+ $("evolve").disabled=p.level<levelReq||p.dna<cost;
+ $("hunt").disabled=!!enemy;
+ ["bite","claw","guard"].forEach(id=>$(id).disabled=!enemy);
+ $("special").disabled=!enemy||p.mutation<10;
+ if(enemy){$("foeMonster").textContent=enemy.emoji;$("foeName").textContent=enemy.name.toUpperCase();$("foeHp").textContent=`❤️ ${Math.max(0,enemy.hp)}/${enemy.maxHp}`;$("battleStatus").textContent="● БОЙ ИДЁТ";$("battleTitle").textContent="ТВОЙ ХОД";$("battleDesc").textContent="Выбери действие внизу";}
+ else{$("foeMonster").textContent="❔";$("foeName").textContent="ПРОТИВНИК";$("foeHp").textContent="❤️ —";$("battleStatus").textContent="● ОЖИДАНИЕ";$("battleTitle").textContent="Ты в безопасности";$("battleDesc").textContent="Найди противника, чтобы начать бой";}
+}
+function levelUp(){while(p.xp>=need()){p.xp-=need();p.level++;p.maxHp+=5;p.hp=p.maxHp;p.strength++;p.defense++;say("⭐ Новый уровень "+p.level+"! Характеристики выросли.")}}
+function enemyTurn(){if(!enemy)return;let d=Math.max(1,enemy.damage-p.defense-(guarding?3:0));guarding=false;animateFighter("foe","attack","💥",0);setTimeout(()=>animateFighter("you","hit","💢",d),180);p.hp=Math.max(0,p.hp-d);say("👹 Противник наносит "+d+" урона.");if(p.hp<=0){p.hp=1;enemy=null;say("💀 Ты проиграл, но смог сбежать. Осталось 1 HP.")}save();render()}
+function attack(type){if(!enemy)return;let d=0;if(type==="bite"){d=Math.max(1,p.strength+Math.floor(Math.random()*3)-1);say("🦷 Укус наносит "+d+" урона.")}if(type==="claw"){d=p.strength+3+Math.floor(Math.random()*4);say("👊 Удар когтями наносит "+d+" урона.")}if(type==="guard"){guarding=true;say("🛡️ Ты готов блокировать атаку.")}if(type==="special"){if(p.mutation<10)return;p.mutation-=10;d=p.strength*2+5;say("🧬 Мутационный удар! Урон "+d+".")}if(type==="guard"){animateFighter("you","guard","🛡️",0)}else{animateFighter("you",type,type==="bite"?"🦷":type==="claw"?"💥":"🧬",d)}if(d)animateFighter("foe","hit",type==="special"?"✨":"💥",d);if(d)enemy.hp-=d;if(enemy&&enemy.hp<=0){let gain=10+Math.floor(Math.random()*8);p.xp+=gain;p.dna+=3;p.mutation+=5;say("🏆 Победа! +"+gain+" опыта, +3 ДНК, +5 мутации.");enemy=null;levelUp();save();render();return}enemyTurn()}
+$("hunt").onclick=()=>{if(enemy)return;if(p.hp<=0){$("notice").textContent="Нужно восстановить здоровье.";return}let e=enemies[Math.floor(Math.random()*enemies.length)],hp=18+Math.floor(Math.random()*12);enemy={name:e[0],emoji:e[1],hp,maxHp:hp,damage:3+Math.floor(Math.random()*4)};$("notice").textContent="Противник приближается!";say("⚠️ Появился противник: "+enemy.name+".");render();animateFighter("foe","hit","❗",0)};
+$("bite").onclick=()=>attack("bite");$("claw").onclick=()=>attack("claw");$("guard").onclick=()=>attack("guard");$("special").onclick=()=>attack("special");
+$("evolve").onclick=()=>{let cost=10+p.evolution*10,req=3+p.evolution*5;if(p.level<req||p.dna<cost)return;p.dna-=cost;p.evolution++;p.maxHp+=10;p.hp=p.maxHp;p.strength+=3;p.defense++;p.mutation+=5;say("🧬 ЭВОЛЮЦИЯ! Новая форма: "+stage()+".");$("notice").textContent="Эволюция завершена!";save();render()};
+document.querySelectorAll(".navbtn").forEach(b=>b.onclick=()=>{document.querySelectorAll(".navbtn").forEach(x=>x.classList.toggle("active",x===b));document.querySelectorAll(".screen").forEach(x=>x.classList.toggle("active",x.id===b.dataset.screen))});
+render();
+</script>
+</body>
+</html>

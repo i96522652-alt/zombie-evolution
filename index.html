@@ -744,4 +744,620 @@ function boot(){
 boot();
 </script>
 </body>
-  </html>
+  </html> const critChance = ability.crit||0;
+ const isCrit = Math.random()<critChance;
+ if(isCrit) base *= 1.8;
+ /* ИСПРАВЛЕНО: считаем защиту врага ДО вычета из base, но снижение защиты
+    врага берём из listOf('enemy'), а не из несуществующего enemy.effects */
+ if(enemy){
+  let eDef = 0;
+  if(enemy.isBoss) eDef = Math.floor(enemy.dmg*0.3);
+  const defDown=listOf('enemy').find(e=>e.kind==='defDown');
+  if(defDown) eDef *= (1-defDown.power);
+  if(ability.pierceDef) eDef *= (1-ability.pierceDef);
+  base -= eDef*0.5;
+  /* ИСПРАВЛЕНО: defUp у врага теперь реально снижает урон */
+  const defUp=listOf('enemy').find(e=>e.kind==='defUp');
+  if(defUp) base *= (1-defUp.power);
+ }
+ base = Math.max(1, Math.round(base));
+ return {dmg:base,isCrit};
+}
+
+function calcEnemyDamage(enemyAtk){
+ let dmg = enemyAtk;
+ let def = p.defense;
+ const defDown=listOf('player').find(e=>e.kind==='defDown');
+ if(defDown) def *= (1-defDown.power);
+ dmg -= Math.floor(def*0.6);
+ const defUp=listOf('player').find(e=>e.kind==='defUp');
+ if(defUp) dmg *= (1-defUp.power);
+ const dodge=listOf('player').find(e=>e.kind==='dodge');
+ const dodgeChance = Math.min(50, (dodge?dodge.power:0) + branchBonus().spd);
+ if(Math.random()<dodgeChance/100){ return {dmg:0,miss:true}; }
+ dmg = Math.max(1, Math.round(dmg));
+ return {dmg,miss:false};
+}
+
+/* =========================================================
+   12. РЕНДЕР
+   ========================================================= */
+function renderEffectsBar(){
+ const bar=$('effectsBar');
+ if(!bar) return;
+ if(!enemy){ bar.innerHTML=''; return; }
+ const chips=[];
+ const pfx=listOf('player');
+ const efx=listOf('enemy');
+ const mapName={
+  burn:'🔥 Горение', poison:'☠️ Яд', shock:'⚡ Шок', stun:'💫 Оглушение',
+  defDown:'📉 -защ', defUp:'🛡️ +защ', atkUp:'💢 +атака', dodge:'💨 Уклон'
+ };
+ pfx.forEach(e=>{ chips.push('<span class="fx-chip buff">'+ (mapName[e.kind]||e.kind)+' '+e.dur+'х</span>'); });
+ efx.forEach(e=>{
+  const dot=(e.kind==='burn'||e.kind==='poison'||e.kind==='shock');
+  const cls=dot?'dot':'debuff';
+  chips.push('<span class="fx-chip '+cls+'">'+ (mapName[e.kind]||e.kind)+' '+e.dur+'х</span>');
+ });
+ bar.innerHTML=chips.join('');
+}
+
+function renderAbilities(){
+ const set=getAbilitySet();
+ const slots=['fast','strong','special'];
+ const els={fast:$('abFast'),strong:$('abStrong'),special:$('abSpecial')};
+ slots.forEach(slot=>{
+  const el=els[slot];
+  if(!el) return;
+  const ab=set[slot];
+  if(!ab) return;
+  const ico=el.querySelector('.ab-ico');
+  const nameEl=el.querySelector('.ab-name');
+  const descEl=el.querySelector('.ab-desc');
+  const tagEl=el.querySelector('.ab-tag');
+  if(ico) ico.textContent=ab.ico;
+  if(nameEl) nameEl.textContent=ab.name;
+  if(descEl) descEl.textContent=ab.desc||'';
+  if(tagEl){
+   if(slot==='fast') tagEl.textContent='БЫСТРАЯ';
+   else if(slot==='strong') tagEl.textContent='СИЛЬНАЯ · КД '+ab.cd;
+   else tagEl.textContent='ОСОБАЯ · КД '+ab.cd;
+  }
+  const cdLeft=cd?cd[slot]:0;
+  const cooling=cdLeft>0;
+  el.classList.toggle('cooling',cooling);
+  const cdEl=el.querySelector('.ab-cd');
+  if(cdEl) cdEl.innerHTML='<b>'+cdLeft+'</b><small>ХОД</small>';
+  let enabled=!!enemy&&!busy&&!cooling;
+  /* ИСПРАВЛЕНО: special требует SPECIAL_COST мутации */
+  if(slot==='special' && p.mutation < SPECIAL_COST) enabled=false;
+  el.disabled=!enabled;
+ });
+}
+
+function refreshButtons(){
+ $('hunt').disabled = !!enemy || busy;
+ $('healBtn').disabled=!(p.dna>=2&&p.hp<p.maxHp);
+ renderAbilities();
+}
+
+function updateBattleText(){
+ if(!enemy){
+  $('battleTitle').textContent='Ты в безопасности';
+  $('battleDesc').textContent='Найди противника, чтобы начать бой';
+  $('battleStatus').textContent='● ОЖИДАНИЕ';
+  return;
+ }
+ $('battleStatus').textContent='● БОЙ ИДЁТ';
+ if(busy){
+  $('battleTitle').textContent='ХОД ПРОТИВНИКА';
+  $('battleDesc').textContent='Приготовься к удару...';
+ }else{
+  $('battleTitle').textContent='ТВОЙ ХОД';
+  $('battleDesc').textContent='Выбери способность';
+ }
+}
+
+function renderStages(){
+ const el=$('stageList');
+ if(!el) return;
+ let html='';
+ if(!p.evoBranch){
+  for(let i=0;i<STAGES.length;i++){
+   const s=STAGES[i];
+   let cls='locked',stat='УР. '+s.levelReq+' · '+s.cost+' 🧬';
+   if(i<p.evolution){ cls='done'; stat='ОТКРЫТО'; }
+   else if(i===p.evolution){ cls='current'; stat='ТЕКУЩАЯ ФОРМА'; }
+   html+='<div class="stage-row '+cls+'"><span class="em">'+s.emoji+'</span><span><b>'+s.name+'</b><br>'+stat+'</span></div>';
+  }
+ }else{
+  const b=BRANCHES[p.evoBranch];
+  for(let i=0;i<b.stages.length;i++){
+   const s=b.stages[i];
+   let cls='locked',stat='СТАДИЯ '+(i+1)+' · '+s.ability;
+   if(i+1<p.evoStage){ cls='done'; stat='ОТКРЫТО'; }
+   else if(i+1===p.evoStage){ cls='current'; stat='ТЕКУЩАЯ ФОРМА'; }
+   html+='<div class="stage-row '+cls+'"><span class="em">'+s.emoji+'</span><span><b>'+s.name+'</b><br>'+stat+'</span></div>';
+  }
+ }
+ el.innerHTML=html;
+}
+
+function renderEvo(){
+ const f=currentForm();
+ $('evoEmoji').textContent=f.emoji;
+ $('evoStage').textContent=f.name;
+ const btn=$('evoOpenBtn');
+ let info='';
+ if(!p.evoBranch){
+  const unlocked=canOpenEvo();
+  info='Выбери ветку эволюции: <b>Сила</b>, <b>Ум</b> или <b>Скорость</b>.<br>'+
+       'Открывается на <b>'+EVO_UNLOCK_LEVEL+'</b> уровне и <b>'+EVO_UNLOCK_DNA+'</b> 🧬 ДНК.<br>'+
+       'Сейчас: уровень <b>'+p.level+'</b>, <b>'+p.dna+'</b> 🧬'+
+       (unlocked?'<br><b style="color:#2f9e4f">ВСЁ ГОТОВО!</b>':'');
+  btn.disabled=!unlocked;
+  btn.textContent=unlocked?'🧬 ВЫБРАТЬ ВЕТКУ':'🔒 НУЖЕН УРОВЕНЬ '+EVO_UNLOCK_LEVEL+' И '+EVO_UNLOCK_DNA+' 🧬';
+ }else{
+  const next=p.evoStage<4?BRANCHES[p.evoBranch].stages[p.evoStage]:null;
+  if(!next){
+   info='<b>МАКСИМАЛЬНАЯ СТАДИЯ ВЕТКИ ДОСТИГНУТА.</b><br>Форма: <b>'+f.name+'</b>. Дальше только легенды.';
+   btn.disabled=true;
+   btn.textContent='МАКС. ЭВОЛЮЦИЯ';
+  }else{
+   const reqLevel=[0,3,6,10][p.evoStage];
+   const reqDna=[0,15,35,60][p.evoStage];
+   const ready=p.level>=reqLevel&&p.dna>=reqDna;
+   info='Ветка: <b>'+BRANCHES[p.evoBranch].name+' · '+BRANCHES[p.evoBranch].attr+'</b><br>'+
+        'Текущая стадия: <b>'+f.name+'</b> ('+p.evoStage+'/4)<br>'+
+        'Следующая: <b>'+next.name+'</b> — '+next.ability+'<br>'+
+        'Требуется: уровень <b>'+reqLevel+'</b> и <b>'+reqDna+'</b> 🧬<br>'+
+        'Сейчас: уровень <b>'+p.level+'</b>, <b>'+p.dna+'</b> 🧬'+
+        (ready?'<br><b style="color:#2f9e4f">ВСЁ ГОТОВО К МУТАЦИИ!</b>':'');
+   btn.disabled=!ready;
+   btn.textContent=ready?('🧬 МУТИРОВАТЬ · '+reqDna+' 🧬'):('🔒 НУЖЕН УР. '+reqLevel+' И '+reqDna+' 🧬');
+  }
+ }
+ $('evoInfo').innerHTML=info;
+
+ const abl=$('abilityLog');
+ const set=getAbilitySet();
+ const header = p.evoBranch ? ('СПОСОБНОСТИ ('+f.name+'):') : 'БАЗОВЫЕ СПОСОБНОСТИ:';
+ const lines=[header];
+ lines.push('• '+set.fast.ico+' '+set.fast.name+' — '+set.fast.desc);
+ lines.push('• '+set.strong.ico+' '+set.strong.name+' — '+set.strong.desc);
+ lines.push('• '+set.special.ico+' '+set.special.name+' — '+set.special.desc+(p.mutation<SPECIAL_COST?' (нужно '+SPECIAL_COST+'% мутации)':''));
+ abl.textContent=lines.join('\n');
+ renderStages();
+}
+
+function renderMusicBtn(){
+ const btn=$('musicBtn');
+ const on=Music.isPlaying();
+ btn.textContent=on?'🔊':'🔇';
+ btn.classList.toggle('off',!on);
+}
+
+function render(){
+ $('level').textContent=p.level;
+ $('levelTop').textContent=p.level;
+ $('xpText').textContent=p.xp+'/'+need();
+ $('xpBar').style.width=clamp(100*p.xp/need(),0,100)+'%';
+ $('dna').textContent=p.dna;
+ $('rankName').textContent='ЗЕД · '+stageName();
+ $('smallAvatar').textContent=stageEmoji();
+ $('myMonster').textContent=stageEmoji();
+ $('myHp').textContent='❤️ '+p.hp+'/'+p.maxHp;
+
+ const yf=$('youFighter');
+ yf.className='fighter you'+(p.evoBranch?(' aura-'+p.evoBranch):'');
+
+ $('statHp').textContent=p.hp+'/'+p.maxHp;
+ $('strength').textContent=p.strength;
+ $('defense').textContent=p.defense;
+ $('mutation').textContent=Math.floor(p.mutation)+'%';
+ $('statWins').textContent=p.wins;
+ $('statBoss').textContent=p.bossWins;
+
+ const f=currentForm();
+ $('statAttr').textContent=f.attr||'—';
+ $('statStage').textContent=(p.evoBranch?p.evoStage:'1')+'/4';
+
+ $('mutBar').style.width=clamp(p.mutation,0,100)+'%';
+ $('mutText').textContent=Math.floor(p.mutation)+'%';
+
+ $('comboText').textContent = combo>1 ? ('КОМБО ×'+combo+' (+'+(combo-1)+' к урону)') : '';
+
+ const arena=$('arena');
+ if(enemy){
+  $('foeMonster').textContent=enemy.emoji;
+  $('foeName').textContent=enemy.name.toUpperCase();
+  $('foeName').classList.toggle('boss',!!enemy.isBoss);
+  $('foeHp').textContent='❤️ '+Math.max(0,Math.ceil(enemy.hp))+'/'+enemy.maxHp;
+  $('foeFighter').className='fighter foe';
+  arena.classList.toggle('boss-arena', !!enemy.isBoss);
+ }else{
+  $('foeMonster').textContent='❔';
+  $('foeName').textContent='ПРОТИВНИК';
+  $('foeName').classList.remove('boss');
+  $('foeHp').textContent='❤️ —';
+  arena.classList.remove('boss-arena');
+ }
+
+ renderEffectsBar();
+ renderEvo();
+ refreshButtons();
+ updateBattleText();
+}
+
+/* =========================================================
+   13. БОЙ
+   ========================================================= */
+function setBusy(v){ busy=v; refreshButtons(); updateBattleText(); }
+
+function startCooldown(slot, turns){
+ if(!cd) resetCooldowns();
+ cd[slot]=turns;
+}
+
+function tickCooldowns(){
+ if(!cd) resetCooldowns();
+ ['fast','strong','special'].forEach(k=>{ if(cd[k]>0) cd[k]-=1; });
+}
+
+function doAbility(slot){
+ if(!enemy||busy) return;
+ const set=getAbilitySet();
+ const ab=set[slot];
+ if(!ab) return;
+ if(cd&&cd[slot]>0) return;
+ /* ИСПРАВЛЕНО: special требует SPECIAL_COST мутации */
+ if(slot==='special' && p.mutation < SPECIAL_COST){
+  $('notice').textContent='Недостаточно мутации: нужно '+SPECIAL_COST+'%.';
+  return;
+ }
+ setBusy(true);
+
+ const fxIcon=ab.fx||'💥';
+ const animKind=(ab.anim||'attack-claw').replace('attack-','');
+ const flashType=ab.flash;
+ const multiEff=(ab.effects||[]).find(e=>e.kind==='multiHit');
+ const hits=multiEff?multiEff.hits:1;
+ const isBuffOnly = (ab.dmgMul===0);
+ const lifestealEff=(ab.effects||[]).find(e=>e.kind==='lifesteal');
+
+ if(isBuffOnly){
+  /* Бафф-способность: накладывает эффекты на игрока */
+  (ab.effects||[]).forEach(e=>{ if(e.kind!=='multiHit') addEffect('player',e); });
+  anim('you',animKind,fxIcon,0,{flash:flashType});
+  say('✨ '+ab.name+' активирована.');
+  if(flashType==='fire') sfx('fire');
+  else if(flashType==='poison') sfx('poison');
+  else if(flashType==='electric') sfx('electric');
+  else sfx('cast');
+  startCooldown(slot,ab.cd);
+  if(slot==='special') addMutation(-SPECIAL_COST);
+  addMutation(5);
+  combo=0;
+  render();
+  setTimeout(()=>{ if(enemy) enemyTurn(); }, 700);
+  return;
+ }
+
+ /* Атакующая способность */
+ let totalDmg=0, isCritAny=false, heal=0;
+ for(let h=0;h<hits;h++){
+  const c=calcPlayerDamage(ab);
+  totalDmg+=c.dmg;
+  if(c.isCrit) isCritAny=true;
+ }
+ /* Накладываем эффекты на цель/игрока */
+ (ab.effects||[]).forEach(e=>{
+  if(e.kind==='multiHit'||e.kind==='lifesteal'||e.kind==='pierceDef') return;
+  if(e.kind==='atkUp'||e.kind==='defUp'||e.kind==='dodge'){
+   /* ИСПРАВЛЕНО: dodge теперь накладывается на игрока в атакующих способностях */
+   addEffect('player',e);
+  }else{
+   addEffect('enemy',e);
+  }
+ });
+
+ if(lifestealEff){
+  heal=Math.max(1,Math.round(totalDmg*lifestealEff.power));
+ }
+ if(ab.regen) heal+=ab.regen;
+
+ enemy.hp-=totalDmg;
+ combo=Math.min(4,combo+1);
+ addMutation(8+(multiEff?8:0));
+ if(slot==='special') addMutation(-SPECIAL_COST);
+
+ const effDesc=(ab.effects||[]).filter(e=>e.kind!=='multiHit'&&e.kind!=='lifesteal'&&e.kind!=='pierceDef').map(e=>{
+  if(e.kind==='burn') return '🔥 поджог';
+  if(e.kind==='poison') return '☠️ яд';
+  if(e.kind==='shock') return '⚡ шок';
+  if(e.kind==='stun') return '💫 стан '+e.dur+'х';
+  if(e.kind==='defDown') return '📉 -'+Math.round(e.power*100)+'% защ.';
+  if(e.kind==='atkUp') return '💢 +'+Math.round(e.power*100)+'% атаки';
+  if(e.kind==='defUp') return '🛡️ +'+Math.round(e.power*100)+'% защ.';
+  if(e.kind==='dodge') return '💨 +'+e.power+'% уклон';
+  return e.kind;
+ });
+ let msg = ab.ico+' '+ab.name+': '+totalDmg+' урона';
+ if(hits>1) msg='⚡ '+ab.name+' ×'+hits+': '+totalDmg+' урона';
+ if(isCritAny) msg='💥 КРИТ! '+msg;
+ if(effDesc.length) msg+=' ('+effDesc.join(', ')+')';
+ if(heal) msg+=' · +'+heal+' HP';
+ say(msg);
+ if(heal){ p.hp=Math.min(p.maxHp,p.hp+heal); spawnDamage(heal,'left',true); sfx('heal'); }
+
+ anim('you',animKind,fxIcon,0,{flash:flashType,crit:isCritAny});
+
+ setTimeout(()=>{
+  if(!enemy) return;
+  anim('foe','hit',fxIcon,0);
+  spawnDamage(totalDmg,'right',false,{crit:isCritAny});
+  if(isCritAny) sfx('crit'); else sfx('hit');
+  if(hits>1) sfx('multi');
+  if(flashType==='fire') sfx('fire');
+  else if(flashType==='poison') sfx('poison');
+  else if(flashType==='electric') sfx('electric');
+  if(ab.shakeStrong) shakeArena(true);
+  vibrate(isCritAny?30:18);
+ },140);
+
+ startCooldown(slot,ab.cd);
+ render();
+
+ setTimeout(()=>{
+  if(!enemy) return;
+  if(enemy.hp<=0){ victory(); return; }
+  enemyTurn();
+ },700);
+}
+
+/* =========================================================
+   14. ХОД ВРАГА
+   ========================================================= */
+function enemyTurn(){
+ if(!enemy) return;
+ const e=enemy;
+
+ /* Тик эффектов врага */
+ const eTick=tickEffects('enemy');
+ if(eTick.dotDamage){
+  e.hp-=eTick.dotDamage;
+  spawnDamage(eTick.dotDamage,'right',false,{dot:true});
+  if(eTick.messages.length) say('На врага: '+eTick.messages.join(' '));
+  render();
+  if(e.hp<=0){ victory(); return; }
+ }
+
+ /* Тик эффектов игрока */
+ const pTick=tickEffects('player');
+ if(pTick.dotDamage){
+  p.hp=Math.max(0,p.hp-pTick.dotDamage);
+  spawnDamage(pTick.dotDamage,'left',false,{dot:true});
+  if(pTick.messages.length) say('На тебя: '+pTick.messages.join(' '));
+  render();
+  if(p.hp<=0){ defeat(); return; }
+ }
+
+ /* Стан */
+ if(eTick.skipTurn){
+  say('💫 '+e.name+' оглушён и пропускает ход!');
+  sfx('stun');
+  spawnParticle('💫','right');
+  tickCooldowns();
+  setBusy(false);
+  render();
+  return;
+ }
+
+ /* Враг атакует */
+ e.turnCount++;
+ const roll=Math.random();
+ let kind='normal';
+ if(e.isBoss){
+  if(e.turnCount%3===0) kind='heavy';
+  else if(roll<0.15) kind='poison';
+ }else{
+  if(e.turnCount%4===0) kind='heavy';
+  else if(roll<0.15) kind='poison';
+  else if(roll<0.25 && e.turnCount%2===0) kind='guard';
+ }
+
+ let base=e.dmg+rand(0,2);
+ let dmgMul=1, dotEffect=null, guardSelf=false;
+ if(kind==='heavy'){ dmgMul=1.8; }
+ else if(kind==='poison'){ dmgMul=0.9; dotEffect={kind:'poison',power:0.10,dur:2}; }
+ else if(kind==='guard'){ guardSelf=true; }
+
+ const result=calcEnemyDamage(Math.round(base*dmgMul));
+
+ if(kind==='heavy') anim('foe','enemy-heavy','💥',0);
+ else anim('foe','attack',kind==='poison'?'☠️':'👊',0);
+ if(kind==='heavy') shakeArena(true); else shakeArena(false);
+ if(kind==='poison') sfx('poison'); else if(kind==='heavy') sfx('heavy'); else sfx('enemy');
+
+ if(guardSelf){
+  addEffect('enemy',{kind:'defUp',power:0.4,dur:2});
+  say('🛡️ '+e.name+' защищается, снижая входящий урон.');
+  render();
+  tickCooldowns();
+  setBusy(false);
+  return;
+ }
+
+ setTimeout(()=>{
+  if(!enemy) return;
+  if(result.miss){
+   anim('you','miss','💨',0);
+   spawnFx('💨','left');
+   say('💨 Ты уклонился от атаки '+e.name+'!');
+   sfx('miss');
+  }else{
+   anim('you','hit','💢',0);
+   p.hp=Math.max(0,p.hp-result.dmg);
+   spawnDamage(result.dmg,'left',false);
+   vibrate(40);
+   if(kind==='heavy'){ combo=0; say('💢 ТЯЖЁЛЫЙ УДАР! '+e.name+': '+result.dmg+' урона'); }
+   else if(kind==='poison'){ say('☠️ '+e.name+' отравляет: '+result.dmg+' урона + яд'); }
+   else { say('👹 '+e.name+' бьёт: '+result.dmg+' урона'); }
+   if(dotEffect){ addEffect('player',dotEffect); }
+  }
+  addMutation(6);
+  tickCooldowns();
+  render();
+  if(p.hp<=0){ defeat(); return; }
+  setBusy(false);
+ },340);
+}
+
+/* =========================================================
+   15. ПОБЕДА / ПОРАЖЕНИЕ
+   ========================================================= */
+function victory(){
+ const e=enemy;
+ if(!e) return;
+ enemy=null;
+ setBusy(false);
+ combo=0;
+ resetEffects();
+ resetCooldowns();
+
+ const foeFighter=$('foeFighter');
+ if(foeFighter){
+  foeFighter.classList.add('death');
+  setTimeout(()=>foeFighter.classList.remove('death'),1000);
+ }
+ sfx('death');
+ /* Возврат к спокойной теме */
+ Music.setTheme('explore');
+
+ const baseXp=e.isBoss?(45+p.level*7):(10+Math.floor(Math.random()*8)+Math.floor(p.level*1.5));
+ const dnaGain=e.isBoss?12:(3+(Math.random()<0.25?2:0));
+
+ p.xp+=baseXp;
+ p.dna+=dnaGain;
+ p.wins++;
+ if(e.isBoss){ p.bossWins++; p.lastBoss=p.wins; }
+ p.hp=Math.min(p.maxHp,p.hp+Math.ceil(p.maxHp*0.18));
+ addMutation(15);
+
+ say((e.isBoss?'👑 БОСС ПОВЕРЖЕН! ':'🏆 Победа! ')+e.name+
+     ' · +'+baseXp+' опыта, +'+dnaGain+' 🧬 ДНК');
+ $('notice').textContent=e.isBoss?'БОСС ПОВЕРЖЕН!':'Победа!';
+
+ sfx('win');
+ levelUp();
+ checkEvoUnlock();
+ save();
+ render();
+}
+
+function defeat(){
+ const e=enemy;
+ enemy=null;
+ setBusy(false);
+ combo=0;
+ resetEffects();
+ resetCooldowns();
+ Music.setTheme('explore');
+
+ /* ИСПРАВЛЕНО: проигрыш больше не лечит до 35% — только 1 HP */
+ p.hp=1;
+ if(p.dna>0) p.dna-=1;
+
+ say('💀 Ты проиграл бой'+(e?(' с '+e.name):'')+'. Потрачена 1 🧬 ДНК.');
+ $('notice').textContent='Восстановись и попробуй снова.';
+ sfx('lose');
+ save();
+ render();
+}
+
+/* =========================================================
+   16. КНОПКИ БОЯ
+   ========================================================= */
+$('hunt').onclick=()=>{
+ if(enemy||busy) return;
+ if(p.hp<=0){ $('notice').textContent='Нужно восстановить здоровье.'; return; }
+ combo=0; $('notice').textContent='';
+ resetEffects();
+ resetCooldowns();
+
+ const bossReady=(p.wins-p.lastBoss)>=BOSS_EVERY;
+ if(bossReady){
+  enemy=makeBoss(pickBoss());
+  say('⚠️ БОСС! '+enemy.name+' преграждает путь!');
+  $('notice').textContent='БОСС!';
+  Music.setTheme('boss');
+ }else{
+  enemy=makeEnemy();
+  say('⚠️ Появился противник: '+enemy.name+'.');
+  Music.setTheme('battle');
+ }
+ render();
+ anim('foe','hit','❗',0);
+ setBusy(false);
+};
+
+$('abFast').onclick=()=>doAbility('fast');
+$('abStrong').onclick=()=>doAbility('strong');
+$('abSpecial').onclick=()=>doAbility('special');
+
+$('healBtn').onclick=()=>{
+ if(p.dna<2||p.hp>=p.maxHp) return;
+ p.dna-=2; p.hp=p.maxHp;
+ say('🍖 Здоровье полностью восстановлено за 2 🧬 ДНК.');
+ $('notice').textContent='Здоровье восстановлено!';
+ sfx('heal');
+ save(); render();
+};
+
+/* =========================================================
+   17. ЭВОЛЮЦИЯ
+   ========================================================= */
+function canOpenEvo(){
+ if(p.evoBranch) return true;
+ return p.level>=EVO_UNLOCK_LEVEL&&p.dna>=EVO_UNLOCK_DNA;
+}
+function checkEvoUnlock(){
+ if(!p.evoBranch&&p.level>=EVO_UNLOCK_LEVEL&&p.dna>=EVO_UNLOCK_DNA){
+  say('🧬 ДРЕВО ЭВОЛЮЦИИ ОТКРЫТО! Зайди в лабораторию и выбери ветку.');
+  $('notice').textContent='Эволюция доступна!';
+ }
+}
+
+function openEvoModal(){
+ if(!canOpenEvo()) return;
+ selectedBranch=null;
+ $('evoConfirm').classList.remove('show');
+ $('evoConfirm').textContent='';
+ $('evoConfirmBtn').disabled=true;
+ $('mCurStage').textContent=currentForm().name;
+ $('mCurBranch').textContent=p.evoBranch?BRANCHES[p.evoBranch].name:'НЕ ВЫБРАНА';
+ renderBranchList();
+ $('evoModal').classList.add('open');
+}
+function closeEvoModal(){ $('evoModal').classList.remove('open'); selectedBranch=null; }
+
+function renderBranchList(){
+ const list=$('branchList');
+ let html='';
+ Object.keys(BRANCHES).forEach(key=>{
+  const b=BRANCHES[key];
+  const locked=!!p.evoBranch&&p.evoBranch!==key;
+  const selected=selectedBranch===key;
+  const isCur=p.evoBranch===key;
+  let stageNow=isCur?p.evoStage:1;
+  let stageline='';
+  for(let i=1;i<=4;i++){
+   stageline+='<i class="'+(i<=stageNow?'on':'')+'"></i>';
+  }
+  html+='<div class="branch '+(selected?'sel':'')+(locked?' locked':'')+'" data-branch="'+key+'">'+
+   '<div class="bhead"><div class="bemoji">'+b.emoji+'</div>'+
+   '<div><div class="btitle">'+b.name+'</div>'+
+   '<span class="battr '+b.attrClass+'">'+b.attr+'</span></div></div>'+
+   '<p>'+b.desc+'</p>'+
+   '<ul>'+
+    b.stages.map((s,i)=>'<li><b>'+s.name+'</b> 

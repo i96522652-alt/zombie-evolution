@@ -1,1029 +1,747 @@
-<html lang="ru">  
-<head>  
-<meta charset="UTF-8">  
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">  
-<meta name="theme-color" content="#dff4c8">  
-<meta name="apple-mobile-web-app-capable" content="yes">  
-<meta name="mobile-web-app-capable" content="yes">  
-<title>ZOMBIE EVOLUTION</title>  
-<style>  
-:root{  
- --bg:#dff4c8;--panel:#f8f4d8;--panel2:#e9f5c8;--line:#6e9e55;  
- --lime:#79c94b;--muted:#55734b;--white:#263d2b;--red:#e85b55;--gold:#e7b83f;  
- --darkgreen:#3f8248;--mint:#b9e89a  
-}  
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}  
-html,body{height:100%}  
-body{  
- margin:0;background:#cce9b2;color:var(--white);font-family:monospace;min-height:100vh;  
- -webkit-user-select:none;user-select:none;overscroll-behavior-y:contain;  
- -webkit-text-size-adjust:100%;  
-}  
-button{font-family:monospace;touch-action:manipulation;cursor:pointer;color:inherit}  
-.app{max-width:520px;margin:auto;min-height:100vh;padding:12px 13px 92px;background:linear-gradient(180deg,#eaf8d5,#d5efb9 55%,#c7e6a8)}  
-header{display:flex;align-items:center;justify-content:space-between;padding:5px 2px 14px;gap:8px}  
-.brand{font-weight:900;font-size:17px;letter-spacing:1px;color:#438b42;text-shadow:1px 1px #fff;line-height:1.1}  
-.brand small{display:block;color:#648456;font-size:9px;letter-spacing:2px;margin-top:3px;text-shadow:none}  
-.resources{display:flex;gap:6px;align-items:center}  
-.pill{background:#fffbe6;border:2px solid #8bb86c;border-radius:7px;padding:7px 8px;font-size:11px;white-space:nowrap;box-shadow:0 2px 0 #a9c991}  
-.iconbtn{  
- width:36px;height:36px;border:2px solid #8bb86c;border-radius:7px;background:#fffbe6;  
- font-size:16px;box-shadow:0 2px 0 #a9c991;padding:0;line-height:1;display:grid;place-items:center;  
-}  
-.iconbtn:active{transform:translateY(2px);box-shadow:0 0 0 #a9c991}  
-.iconbtn.off{opacity:.55}  
-.playerline{display:flex;align-items:center;gap:10px;background:#fffbe6;border:2px solid #8bb86c;border-radius:9px;padding:9px 11px;margin-bottom:12px;box-shadow:0 3px 0 #b2d49a}  
-.avatar{width:40px;height:40px;border:2px solid #83ae65;border-radius:7px;background:#d9efbd;display:grid;place-items:center;font-size:25px;flex:none}  
-.playerinfo{flex:1;min-width:0}  
-.playerinfo strong{font-size:13px;color:#438b42}  
-.playerinfo small{display:block;color:var(--muted);font-size:10px;margin-top:4px}  
-.xpbar{height:8px;background:#d5dfc4;border:1px solid #8fae76;border-radius:2px;margin-top:6px;overflow:hidden}  
-.xpbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#a4e75d,#62bd48);transition:width .25s}  
-.screen{display:none}.screen.active{display:block}  
-.arena-card{background:#fffbe6;border:2px solid #6e9e55;border-radius:9px;overflow:hidden;box-shadow:0 3px 0 #b2d49a}  
-.arena-top{display:flex;justify-content:space-between;align-items:center;padding:11px 12px;font-size:11px;color:#55734b;border-bottom:2px solid #c5dda9}  
-.status{color:#438b42;font-weight:bold}  
-.arena{height:245px;position:relative;overflow:hidden;background:linear-gradient(180deg,#8bd8f2 0%,#b6eafa 53%,#8dcf65 54%,#75bd55 100%)}  
-.arena:before{content:"";position:absolute;left:-10%;right:-10%;bottom:18px;height:72px;background:#72b951;border:3px solid #579849;border-radius:50%}  
-.arena:after{content:"";position:absolute;left:-10%;right:-10%;top:110px;height:35px;background:#a8dd75;border-radius:50%;opacity:.85}  
-.sun{position:absolute;right:35px;top:23px;width:35px;height:35px;border-radius:50%;background:#ffe78b;border:2px solid #e6bd52;box-shadow:0 0 0 5px #fff4b344}  
-.fighter{position:absolute;z-index:2;bottom:30px;width:43%;display:flex;flex-direction:column;align-items:center;will-change:transform}  
-.fighter.you{left:2%}.fighter.foe{right:2%}  
-.monster{font-size:clamp(63px,19vw,91px);line-height:1.15;filter:drop-shadow(3px 4px 0 #527b48);position:relative;will-change:transform,filter}  
-.you .monster{transform:scaleX(1)}.foe .monster{transform:scaleX(-1)}  
-.fname{font-size:10px;font-weight:bold;color:#29432c;background:#fffbe6;padding:4px 8px;border:2px solid #6e9e55;border-radius:4px;margin-top:2px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}  
-.fname.boss{background:#ffe3e0;border-color:#c25b5b;color:#8b2f2f}  
-.hpmini{font-size:10px;color:#29432c;background:#fffbe6;border:2px solid #8bb86c;padding:4px 7px;border-radius:5px;margin-bottom:5px}  
-.arena-bottom{padding:11px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fffbe6}  
-.arena-bottom small{color:var(--muted);font-size:10px}.arena-bottom b{font-size:12px}  
-.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 0 0}  
-.action{border:2px solid #6e9e55;background:linear-gradient(#f8f4d8,#e7f2c9);color:#29432c;border-radius:7px;padding:13px 8px;font:bold 12px monospace;min-height:53px;box-shadow:0 3px 0 #a5c58b}  
-.action:active{transform:translateY(2px);box-shadow:0 1px 0 #a5c58b}  
-.action span{display:block;font-size:19px;margin-bottom:5px}  
-.action.main{background:linear-gradient(#a9e875,#79c94b);border-color:#579849;color:#244126}  
-.action:disabled{opacity:.4;box-shadow:none}  
-.action.ready{animation:readyPulse 1.1s infinite;border-color:#3f8248;background:linear-gradient(#d6ffb0,#a4e75d)}  
-@keyframes readyPulse{0%,100%{box-shadow:0 3px 0 #a5c58b}50%{box-shadow:0 3px 0 #a5c58b,0 0 14px #79c94b}}  
-.mutline{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:10px;color:#55734b;background:#fffbe6;border:2px solid #8bb86c;border-radius:7px;padding:8px 10px}  
-.mutbar{flex:1;height:9px;background:#d5dfc4;border:1px solid #8fae76;border-radius:3px;overflow:hidden}  
-.mutbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#b6e3ff,#4aa3d8);transition:width .25s}  
-.mutline b{color:#2f6b86;font-size:10px;white-space:nowrap}  
-.combo{min-height:14px;font-size:11px;font-weight:bold;color:#c1721b;text-align:center;margin-top:6px}  
-.section-title{display:flex;align-items:center;justify-content:space-between;margin:6px 1px 10px}  
-.section-title h2{font-size:14px;margin:0;color:#438b42}  
-.section-title small{font-size:10px;color:var(--muted)}  
-.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}  
-.stat{background:#fffbe6;border:2px solid #8bb86c;border-radius:8px;padding:14px;box-shadow:0 2px 0 #b2d49a}  
-.stat span{display:block;color:var(--muted);font-size:10px}  
-.stat b{display:block;font-size:22px;margin-top:7px;color:#315b36}  
-.evo-card{background:linear-gradient(135deg,#f8f4d8,#e3f3c6);border:2px solid #78a85c;border-radius:9px;padding:15px;box-shadow:0 3px 0 #b2d49a}  
-.evo-card .big{font-size:42px}  
-.evo-card h3{margin:7px 0;color:#438b42;font-size:16px}  
-.evo-card p{font-size:11px;line-height:1.6;color:#55734b}  
-.wide{width:100%;border:2px solid #579849;border-radius:7px;background:linear-gradient(#a9e875,#79c94b);color:#244126;padding:14px;font:bold 13px monospace;box-shadow:0 3px 0 #a5c58b}  
-.wide:active{transform:translateY(2px);box-shadow:0 1px 0 #a5c58b}  
-.wide:disabled{opacity:.4;box-shadow:none}  
-.wide.alt{background:linear-gradient(#ffe9a8,#e7b83f);border-color:#b8902c;color:#5a4408}  
-.stage-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}  
-.stage-row{display:flex;align-items:center;gap:9px;background:#fffbe6;border:2px solid #c5dda9;border-radius:7px;padding:8px 10px;font-size:10px;color:#55734b;line-height:1.4}  
-.stage-row .em{font-size:20px;flex:none}  
-.stage-row b{color:#315b36;font-size:11px}  
-.stage-row.done{border-color:#8bb86c;background:#eaf7d4}  
-.stage-row.current{border-color:#79c94b;background:#e6f8cf;box-shadow:0 2px 0 #b2d49a}  
-.stage-row.locked{opacity:.5}  
-.log{margin-top:12px;background:#fffbe6;border:2px solid #8bb86c;border-radius:8px;padding:12px;font-size:11px;color:#55734b;line-height:1.7;max-height:145px;overflow:auto;white-space:pre-line;-webkit-overflow-scrolling:touch}  
-.notice{font-size:11px;color:#a16d18;min-height:17px;margin-top:8px;text-align:center}  
-.bottomnav{position:fixed;z-index:10;bottom:0;left:0;right:0;background:#f4f2d9;border-top:2px solid #8bb86c;display:flex;justify-content:center;padding:8px 8px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -2px 8px #6e9e5522}  
-.navinner{width:100%;max-width:520px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}  
-.navbtn{border:2px solid transparent;background:transparent;color:#66835a;border-radius:7px;padding:7px 3px;font:11px monospace}  
-.navbtn span{display:block;font-size:20px;margin-bottom:3px}  
-.navbtn.active{background:#d9efbd;border-color:#8bb86c;color:#397d3e;box-shadow:0 2px 0 #b2d49a}  /* ---------- ретро-анимации ---------- */
-.fighter.you.attack-bite{animation:playerBite .48s ease}
-.fighter.you.attack-claw{animation:playerClaw .52s ease}
-.fighter.you.attack-special{animation:playerSpecial .72s ease}
-.fighter.you.guard-pose{animation:guardPose .45s ease}
-.fighter.foe.take-hit{animation:foeHit .42s ease}
-.fighter.foe.enemy-attack{animation:enemyLunge .5s ease}
-.fighter.you.take-hit{animation:playerHit .42s ease}
-.arena.shake{animation:arenaShake .34s ease}
-.flash{position:absolute;inset:0;z-index:5;pointer-events:none;background:#fff8a8;opacity:0}
-.flash.on{animation:screenFlash .28s ease-out}
-.arena .battle-fx{position:absolute;z-index:6;top:40%;transform:translate(-50%,-50%);font-size:38px;pointer-events:none;animation:fxPop .6s ease-out forwards;filter:drop-shadow(2px 3px #55734b)}
-.battle-fx.left{left:30%}
-.battle-fx.right{left:70%}
-.damage-pop{position:absolute;z-index:7;top:35%;font:bold 18px monospace;color:#d7473e;text-shadow:2px 2px #fff;pointer-events:none;animation:damageFloat .8s ease-out forwards}
-.damage-pop.left{left:30%}
-.damage-pop.right{left:70%}
-.damage-pop.heal{color:#2f9e4f}
-@keyframes playerBite{0%,100%{transform:translateX(0)}35%{transform:translateX(55px) rotate(-8deg)}65%{transform:translateX(38px) rotate(5deg)}}
-@keyframes playerClaw{0%,100%{transform:translateX(0) rotate(0)}30%{transform:translateX(48px) rotate(-14deg)}55%{transform:translateX(40px) rotate(12deg)}}
-@keyframes playerSpecial{0%,100%{transform:translateX(0);filter:brightness(1)}25%{transform:translateX(8px) scale(1.13);filter:brightness(1.5) drop-shadow(0 0 12px #a6f05b)}65%{transform:translateX(56px) scale(1.08);filter:brightness(1.4) drop-shadow(0 0 15px #a6f05b)}}
-@keyframes guardPose{50%{transform:scale(.88) translateY(7px);filter:drop-shadow(0 0 9px #75bdf0)}}
-@keyframes foeHit{0%,100%{transform:translateX(0)}25%{transform:translateX(12px) rotate(9deg)}50%{transform:translateX(-10px) rotate(-8deg);filter:brightness(1.8)}75%{transform:translateX(6px)}}
-@keyframes enemyLunge{0%,100%{transform:translateX(0)}40%,65%{transform:translateX(-48px) rotate(8deg)}}
-@keyframes playerHit{0%,100%{transform:translateX(0)}25%{transform:translateX(-9px) rotate(-7deg);filter:brightness(1.8)}55%{transform:translateX(8px) rotate(6deg)}}
-@keyframes arenaShake{0%,100%{transform:translate(0,0)}20%{transform:translate(-5px,3px)}40%{transform:translate(5px,-3px)}60%{transform:translate(-4px,-2px)}80%{transform:translate(4px,2px)}}
-@keyframes screenFlash{0%{opacity:.85}100%{opacity:0}}
-@keyframes fxPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(-20deg)}35%{opacity:1;transform:translate(-50%,-50%) scale(1.25) rotate(8deg)}100%{opacity:0;transform:translate(-50%,-80%) scale(.8)}}
-@keyframes damageFloat{0%{opacity:0;transform:translate(-50%,10px) scale(.6)}20%{opacity:1;transform:translate(-50%,-10px) scale(1.15)}100%{opacity:0;transform:translate(-50%,-52px) scale(1)}}
-@media(prefers-reduced-motion:reduce){
-.fighter,.monster,.battle-fx,.damage-pop,.arena.shake,.flash.on,.action.ready{animation-duration:.01ms!important;animation-iteration-count:1!important}
+ const critChance = ability.crit||0;
+ const isCrit = Math.random()<critChance;
+ if(isCrit) base *= 1.8;
+ /* ИСПРАВЛЕНО: считаем защиту врага ДО вычета из base, но снижение защиты
+    врага берём из listOf('enemy'), а не из несуществующего enemy.effects */
+ if(enemy){
+  let eDef = 0;
+  if(enemy.isBoss) eDef = Math.floor(enemy.dmg*0.3);
+  const defDown=listOf('enemy').find(e=>e.kind==='defDown');
+  if(defDown) eDef *= (1-defDown.power);
+  if(ability.pierceDef) eDef *= (1-ability.pierceDef);
+  base -= eDef*0.5;
+  /* ИСПРАВЛЕНО: defUp у врага теперь реально снижает урон */
+  const defUp=listOf('enemy').find(e=>e.kind==='defUp');
+  if(defUp) base *= (1-defUp.power);
+ }
+ base = Math.max(1, Math.round(base));
+ return {dmg:base,isCrit};
 }
-@media(min-width:480px){.arena{height:280px}}
-</style>
 
-</head>  
-<body>  
-<div class="app">  
-<header>  
-  <div class="brand">☣ ZOMBIE EVOLUTION<small>THE MUTATION PROJECT</small></div>  
-  <div class="resources">  
-    <button class="iconbtn" id="musicBtn" aria-label="Музыка">🔊</button>  
-    <div class="pill">🧬 <b id="dna">0</b></div>  
-    <div class="pill">⭐ <b id="levelTop">1</b></div>  
-  </div>  
-</header>  <div class="playerline">  
-  <div class="avatar" id="smallAvatar">🧟</div>  
-  <div class="playerinfo">  
-    <strong id="rankName">ЗЕД · НОВИЧОК</strong>  
-    <small>УРОВЕНЬ <b id="level">1</b> · ОПЫТ <b id="xpText">0/25</b></small>  
-    <div class="xpbar"><i id="xpBar" style="width:0%"></i></div>  
-  </div>  
-</div>  <main>  
-<section class="screen active" id="battleScreen">  
- <div class="arena-card">  
-  <div class="arena-top"><b>ЗОНА СРАЖЕНИЯ</b><span class="status" id="battleStatus">● ОЖИДАНИЕ</span></div>  
-  <div class="arena" id="arena">  
-   <div class="sun"></div>  
-   <div class="flash" id="flash"></div>  
-   <div class="fighter you"><div class="hpmini" id="myHp">❤️ 30/30</div><div class="monster" id="myMonster">🧟</div><div class="fname">ТВОЙ ЗОМБИ</div></div>  
-   <div class="fighter foe"><div class="hpmini" id="foeHp">❤️ —</div><div class="monster" id="foeMonster">❔</div><div class="fname" id="foeName">ПРОТИВНИК</div></div>  
-  </div>  
-  <div class="arena-bottom">  
-    <div><b id="battleTitle">Ты в безопасности</b><br><small id="battleDesc">Найди противника, чтобы начать бой</small></div>  
-    <button class="action main" id="hunt" style="min-height:42px;padding:8px 12px">НАЙТИ</button>  
-  </div>  
- </div>   <div class="mutline">  
-   <span>🧬 МУТАЦИЯ</span>  
-   <div class="mutbar"><i id="mutBar"></i></div>  
-   <b id="mutText">0%</b>  
- </div>  
- <div class="combo" id="comboText"></div>   <div class="action-grid">  
-  <button class="action" id="bite" disabled><span>🦷</span>Укус</button>  
-  <button class="action" id="claw" disabled><span>👊</span>Удар когтями</button>  
-  <button class="action" id="guard" disabled><span>🛡️</span>Защита</button>  
-  <button class="action" id="special" disabled><span>🧬</span>Мутация</button>  
- </div>  
- <div class="notice" id="notice"></div>  
- <div class="log" id="log">[СИСТЕМА] Зед проснулся в заброшенном городе.  
-[СИСТЕМА] Найди первого противника и начни эволюцию.</div>  
-</section>  <section class="screen" id="statsScreen">  
- <div class="section-title"><h2>ХАРАКТЕРИСТИКИ</h2><small>ТВОЙ МУТАНТ</small></div>  
- <div class="statgrid">  
-  <div class="stat"><span>❤️ ЗДОРОВЬЕ</span><b id="statHp">30/30</b></div>  
-  <div class="stat"><span>💥 СИЛА</span><b id="strength">5</b></div>  
-  <div class="stat"><span>🛡️ ЗАЩИТА</span><b id="defense">1</b></div>  
-  <div class="stat"><span>🧪 МУТАЦИЯ</span><b id="mutation">0%</b></div>  
-  <div class="stat"><span>🏆 ПОБЕД</span><b id="statWins">0</b></div>  
-  <div class="stat"><span>👑 БОССОВ</span><b id="statBoss">0</b></div>  
- </div>  
- <button class="wide alt" id="healBtn" style="margin-top:12px">🍖 ВОССТАНОВИТЬ ЗДОРОВЬЕ · 2 🧬</button>  
- <div class="log">Каждый новый уровень увеличивает силу, защиту и максимальное здоровье. Побеждай врагов, чтобы получать опыт и ДНК-образцы. Каждая 5-я победа открывает путь к боссу.</div>  
-</section>  <section class="screen" id="evoScreen">  
- <div class="section-title"><h2>ЛАБОРАТОРИЯ ЭВОЛЮЦИИ</h2><small>МУТАЦИИ</small></div>  
- <div class="evo-card">  
-   <div class="big" id="evoEmoji">🧟</div>  
-   <h3 id="evoStage">НОВИЧОК</h3>  
-   <p id="evoInfo">Достигни 3-го уровня и собери 10 ДНК-образцов, чтобы запустить первую мутацию.</p>  
-   <button class="wide" id="evolve">🧬 ЭВОЛЮЦИОНИРОВАТЬ</button>  
- </div>  
- <div class="stage-list" id="stageList"></div>  
- <div class="log">Эволюция меняет форму зомби и усиливает его тело. Каждая следующая стадия требует больше подготовки.</div>  
-</section>  
-</main>  
-</div>  <nav class="bottomnav"><div class="navinner">  
-<button class="navbtn active" data-screen="battleScreen"><span>⚔️</span>БОЙ</button>  
-<button class="navbtn" data-screen="statsScreen"><span>📊</span>СТАТЫ</button>  
-<button class="navbtn" data-screen="evoScreen"><span>🧬</span>ЭВОЛЮЦИЯ</button>  
-</div></nav>  <script>  
-'use strict';  
-/* =========================================================  
-   1. ЭВОЛЮЦИИ И ДАННЫЕ  
-   ========================================================= */  
-const STAGES=[  
- {name:'НОВИЧОК',          emoji:'🧟',  cost:0,   levelReq:0},  
- {name:'МУТАНТ',           emoji:'🧟‍♂️', cost:10,  levelReq:3},  
- {name:'АЛЬФА-ЗОМБИ',      emoji:'👹',  cost:25,  levelReq:6},  
- {name:'КОРОЛЬ МУТАНТОВ',  emoji:'🧛',  cost:45,  levelReq:10},  
- {name:'БИО-ТИТАН',        emoji:'🦖',  cost:70,  levelReq:15},  
- {name:'ПОВЕЛИТЕЛЬ ЧУМЫ',  emoji:'☠️',  cost:110, levelReq:21},  
- {name:'АБСОЛЮТ',          emoji:'👽',  cost:160, levelReq:28}  
-];  
-  
-const ENEMIES=[  
- {name:'Бродячий охотник',  emoji:'🧟‍♂️', hp:18, dmg:3},  
- {name:'Голодный пёс',      emoji:'🐺',  hp:16, dmg:4},  
- {name:'Городской мародёр', emoji:'💀',  hp:22, dmg:3},  
- {name:'Заражённый солдат', emoji:'👾',  hp:26, dmg:5},  
- {name:'Крысиный король',   emoji:'🐀',  hp:20, dmg:4},  
- {name:'Сталкер руин',      emoji:'🧟',  hp:24, dmg:5}  
-];  
-  
-const BOSSES=[  
- {name:'МУТАНТ-ПАЛАЧ',   emoji:'👹', hp:60,  dmg:7,  minLevel:1},  
- {name:'КОРОЛЬ КРЫС',    emoji:'🐀', hp:95,  dmg:10, minLevel:6},  
- {name:'БИО-МЕХАНИЗМ',   emoji:'🦾', hp:140, dmg:14, minLevel:12},  
- {name:'ПОВЕЛИТЕЛЬ ЧУМЫ',emoji:'☠️', hp:200, dmg:18, minLevel:19},  
- {name:'ПОЖИРАТЕЛЬ',     emoji:'👽', hp:280, dmg:24, minLevel:26}  
-];  
-  
-const MUT_MAX=100;  
-const SPECIAL_COST=60;  
-const BOSS_EVERY=5;  
-  
-/* =========================================================  
-   2. СОХРАНЕНИЕ  
-   ========================================================= */  
-const SAVE_KEY='zombieSaveV2';  
-const defaults={  
- version:2,level:1,xp:0,hp:30,maxHp:30,strength:5,defense:1,  
- mutation:0,dna:0,evolution:0,wins:0,bossWins:0,lastBoss:0,  
- music:true  
-};  
-  
-function loadSave(){  
- let d=Object.assign({},defaults);  
- try{  
-  const raw=localStorage.getItem(SAVE_KEY)||localStorage.getItem('zombieSave');  
-  if(raw){  
-   const o=JSON.parse(raw);  
-   if(o&&typeof o==='object'){  
-    for(const k in defaults){  
-     if(o[k]!==undefined && typeof o[k]===typeof defaults[k]) d[k]=o[k];  
-    }  
-   }  
-  }  
- }catch(e){ console.warn('Не удалось загрузить сохранение',e); }  
-  
- // Санитизация  
- d.level=Math.max(1,Math.floor(d.level));  
- d.maxHp=Math.max(10,Math.floor(d.maxHp));  
- d.hp=Math.min(d.maxHp,Math.floor(d.hp));  
- if(d.hp<=0) d.hp=Math.max(1,Math.floor(d.maxHp*0.5));  
- d.xp=Math.max(0,Math.floor(d.xp));  
- d.strength=Math.max(1,Math.floor(d.strength));  
- d.defense=Math.max(0,Math.floor(d.defense));  
- d.dna=Math.max(0,Math.floor(d.dna));  
- d.evolution=Math.max(0,Math.min(STAGES.length-1,Math.floor(d.evolution)));  
- d.mutation=Math.max(0,Math.min(MUT_MAX,Math.floor(d.mutation)));  
- d.wins=Math.max(0,Math.floor(d.wins));  
- d.bossWins=Math.max(0,Math.floor(d.bossWins));  
- d.lastBoss=Math.max(0,Math.floor(d.lastBoss));  
- if(d.lastBoss>d.wins) d.lastBoss=d.wins;  
- d.music=!!d.music;  
- return d;  
-}  
-  
-let p=loadSave();  
-  
-function save(){  
- try{ localStorage.setItem(SAVE_KEY,JSON.stringify(p)); }  
- catch(e){ console.warn('Не удалось сохранить',e); }  
-}  
-  
-/* =========================================================  
-   3. АУДИО: ЧИПТЮН-МУЗЫКА + SFX (Web Audio API, без файлов)  
-   ========================================================= */  
-const Music=(function(){  
- let ctx=null,master=null,sfxGain=null,timer=null,nextTime=0,step=0,playing=false;  
- const BPM=138, STEP=60/BPM/2, LOOKAHEAD=0.12;  
- // 16 шагов = 4 такта: Am - F - C - G  
- const BASS=[45,45,57,45, 41,41,53,41, 48,48,60,48, 43,43,55,43];  
- const LEAD=[69,72,76,72, 65,69,72,69, 72,76,79,76, 67,71,74,71];  
- const midi=n=>440*Math.pow(2,(n-69)/12);  
-  
- function ensure(){  
-  if(ctx) return ctx;  
-  const AC=window.AudioContext||window.webkitAudioContext;  
-  if(!AC) return null;  
-  try{  
-   ctx=new AC();  
-   master=ctx.createGain();  
-   master.gain.value=0;  
-   master.connect(ctx.destination);  
-   sfxGain=ctx.createGain();  
-   sfxGain.gain.value=0.5;  
-   sfxGain.connect(ctx.destination);  
-  }catch(e){ ctx=null; }  
-  return ctx;  
- }  
-  
- function tone(freq,t,dur,type,vol){  
-  if(!ctx) return;  
-  const o=ctx.createOscillator(),g=ctx.createGain();  
-  o.type=type||'square';  
-  o.frequency.setValueAtTime(freq,t);  
-  g.gain.setValueAtTime(0.0001,t);  
-  g.gain.linearRampToValueAtTime(vol,t+0.012);  
-  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);  
-  o.connect(g); g.connect(master);  
-  o.start(t); o.stop(t+dur+0.03);  
- }  
-  
- function noise(t,dur,vol){  
-  if(!ctx) return;  
-  const len=Math.max(1,Math.floor(ctx.sampleRate*dur));  
-  const buf=ctx.createBuffer(1,len,ctx.sampleRate);  
-  const ch=buf.getChannelData(0);  
-  for(let i=0;i<len;i++) ch[i]=(Math.random()*2-1)*(1-i/len);  
-  const src=ctx.createBufferSource(); src.buffer=buf;  
-  const g=ctx.createGain(); g.gain.value=vol;  
-  src.connect(g); g.connect(master);  
-  src.start(t);  
- }  
-  
- function kick(t){  
-  if(!ctx) return;  
-  const o=ctx.createOscillator(),g=ctx.createGain();  
-  o.type='sine';  
-  o.frequency.setValueAtTime(135,t);  
-  o.frequency.exponentialRampToValueAtTime(45,t+0.11);  
-  g.gain.setValueAtTime(0.34,t);  
-  g.gain.exponentialRampToValueAtTime(0.001,t+0.14);  
-  o.connect(g); g.connect(master);  
-  o.start(t); o.stop(t+0.16);  
- }  
-  
- function sched(s,t){  
-  const b=BASS[s];  
-  if(b>0) tone(midi(b-12),t,STEP*0.88,'square',0.20);  
-  const l=LEAD[s];  
-  if(l>0) tone(midi(l),t,STEP*0.62,'square',0.075);  
-  if(s%2===1) noise(t,0.035,0.035);  
-  if(s%4===0) kick(t);  
- }  
-  
- function tick(){  
-  if(!playing||!ctx) return;  
-  while(nextTime<ctx.currentTime+LOOKAHEAD){  
-   sched(step,nextTime);  
-   nextTime+=STEP;  
-   step=(step+1)%16;  
-  }  
- }  
-  
- function start(){  
-  if(!ensure()) return;  
-  if(ctx.state==='suspended'){ ctx.resume().catch(()=>{}); }  
-  if(playing) return;  
-  playing=true; step=0; nextTime=ctx.currentTime+0.06;  
-  master.gain.cancelScheduledValues(ctx.currentTime);  
-  master.gain.setValueAtTime(Math.max(0.0001,master.gain.value),ctx.currentTime);  
-  master.gain.linearRampToValueAtTime(0.34,ctx.currentTime+0.7);  
-  timer=setInterval(tick,25);  
-  tick();  
- }  
-  
- function stop(){  
-  playing=false;  
-  if(timer){ clearInterval(timer); timer=null; }  
-  if(ctx&&master){  
-   master.gain.cancelScheduledValues(ctx.currentTime);  
-   master.gain.setValueAtTime(Math.max(0.0001,master.gain.value),ctx.currentTime);  
-   master.gain.linearRampToValueAtTime(0.0001,ctx.currentTime+0.35);  
-  }  
- }  
-  
- function blip(freq,dur,type,vol){  
-  if(!ensure()) return;  
-  if(ctx.state==='suspended'){ ctx.resume().catch(()=>{}); }  
-  const o=ctx.createOscillator(),g=ctx.createGain();  
-  o.type=type||'square';  
-  o.frequency.setValueAtTime(freq,ctx.currentTime);  
-  g.gain.setValueAtTime(vol||0.14,ctx.currentTime);  
-  g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+dur);  
-  o.connect(g); g.connect(sfxGain);  
-  o.start(); o.stop(ctx.currentTime+dur+0.03);  
- }  
-  
- function sweep(f1,f2,dur,type,vol){  
-  if(!ensure()) return;  
-  if(ctx.state==='suspended'){ ctx.resume().catch(()=>{}); }  
-  const o=ctx.createOscillator(),g=ctx.createGain(),t=ctx.currentTime;  
-  o.type=type||'square';  
-  o.frequency.setValueAtTime(f1,t);  
-  o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+dur);  
-  g.gain.setValueAtTime(vol||0.16,t);  
-  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);  
-  o.connect(g); g.connect(sfxGain);  
-  o.start(t); o.stop(t+dur+0.03);  
- }  
-  
- return {  
-  start, stop, blip, sweep,  
-  isPlaying:()=>playing,  
-  get ctx(){ return ctx; }  
- };  
-})();  
-  
-function sfx(kind){  
- if(!p.music) return;  
- try{  
-  switch(kind){  
-   case 'hit':    Music.blip(190,0.09,'square',0.16); break;  
-   case 'crit':   Music.sweep(420,120,0.16,'square',0.18); break;  
-   case 'enemy':  Music.blip(105,0.13,'sawtooth',0.14); break;  
-   case 'guard':  Music.blip(330,0.12,'triangle',0.12); break;  
-   case 'special':Music.sweep(220,880,0.28,'square',0.16); break;  
-   case 'win':    [523,659,784,1046].forEach((f,i)=>setTimeout(()=>Music.blip(f,0.14,'square',0.15),i*90)); break;  
-   case 'lose':   [392,330,262,196].forEach((f,i)=>setTimeout(()=>Music.blip(f,0.18,'triangle',0.15),i*110)); break;  
-   case 'level':  [523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>Music.blip(f,0.12,'square',0.13),i*70)); break;  
-   case 'evolve': [262,392,523,784,1046,1318].forEach((f,i)=>setTimeout(()=>Music.blip(f,0.16,'square',0.15),i*80)); break;  
-  }  
- }catch(e){}  
-}  
-  
-function vibrate(ms){  
- if(!p.music) return;  
- try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){}  
-}  
-  
-/* =========================================================  
-   4. СОСТОЯНИЕ БОЯ  
-   ========================================================= */  
-let enemy=null;  
-let busy=false;  
-let guarding=false;  
-let combo=0;  
-  
-const $=id=>document.getElementById(id);  
-const rand=(a,b)=>a+Math.floor(Math.random()*(b-a+1));  
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));  
-  
-function need(){ return 25+(p.level-1)*15; }  
-function stageEmoji(){ return STAGES[p.evolution].emoji; }  
-function stageName(){ return STAGES[p.evolution].name; }  
-  
-/* =========================================================  
-   5. ЛОГ  
-   ========================================================= */  
-function say(t){  
- const log=$('log');  
- log.textContent+='\n'+t;  
- const lines=log.textContent.split('\n');  
- if(lines.length>70) log.textContent=lines.slice(-70).join('\n');  
- log.scrollTop=log.scrollHeight;  
-}  
-  
-/* =========================================================  
-   6. ВИЗУАЛЬНЫЕ ЭФФЕКТЫ  
-   ========================================================= */  
-function spawnFx(emoji,side){  
- const arena=$('arena');  
- const fx=document.createElement('div');  
- fx.className='battle-fx '+(side==='right'?'right':'left');  
- fx.textContent=emoji||'💥';  
- arena.appendChild(fx);  
- setTimeout(()=>{ if(fx.parentNode) fx.parentNode.removeChild(fx); },650);  
-}  
-  
-function spawnDamage(amount,side,heal){  
- const arena=$('arena');  
- const pop=document.createElement('div');  
- pop.className='damage-pop '+(side==='right'?'right':'left')+(heal?' heal':'');  
- pop.textContent=(heal?'+':'-')+Math.abs(amount);  
- arena.appendChild(pop);  
- setTimeout(()=>{ if(pop.parentNode) pop.parentNode.removeChild(pop); },820);  
-}  
-  
-function flash(){  
- const f=$('flash');  
- f.classList.remove('on');  
- void f.offsetWidth;  
- f.classList.add('on');  
-}  
-  
-function shakeArena(){  
- const a=$('arena');  
- a.classList.remove('shake');  
- void a.offsetWidth;  
- a.classList.add('shake');  
- setTimeout(()=>a.classList.remove('shake'),400);  
-}  
-  
-const ANIM_MAP={  
- bite:'attack-bite', claw:'attack-claw', special:'attack-special',  
- guard:'guard-pose', attack:'enemy-attack', hit:'take-hit'  
-};  
-  
-function anim(who,kind,emoji,dmg){  
- const arena=$('arena');  
- const mon=who==='you'?$('myMonster'):$('foeMonster');  
- const fighter=mon?mon.closest('.fighter'):null;  
- if(!fighter||!arena) return;  
-  
- const cls=ANIM_MAP[kind];  
- fighter.className='fighter '+who;  
- void fighter.offsetWidth;  
- if(cls) fighter.classList.add(cls);  
-  
- // ✅ ИСПРАВЛЕНО: при 'hit' эффект показывается на СТОРОНЕ ЖЕРТВЫ,  
- // при атаках — на СТОРОНЕ ПРОТИВНИКА атакующего.  
- const targetSide = kind==='hit'  
-   ? (who==='you' ? 'left' : 'right')  
-   : (who==='you' ? 'right' : 'left');  
-  
- if(kind==='attack'){  
-  shakeArena();  
- }else if(kind==='bite'||kind==='claw'||kind==='special'||kind==='hit'){  
-  flash();  
-  shakeArena();  
-  spawnFx(emoji,targetSide);  
-  if(dmg) spawnDamage(dmg,targetSide,false);  
- }  
-  
- setTimeout(()=>{ if(cls) fighter.classList.remove(cls); },720);  
-}  
-  
-/* =========================================================  
-   7. МУТАЦИЯ / ОПЫТ  
-   ========================================================= */  
-function addMutation(n){  
- p.mutation=clamp(Math.round(p.mutation+n),0,MUT_MAX);  
-}  
-  
-function levelUp(){  
- let leveled=false;  
- let guard=0;  
- while(p.xp>=need() && guard<50){  
-  p.xp-=need();  
-  p.level++;  
-  p.maxHp+=5;  
-  p.strength+=1;  
-  p.defense+=1;  
-  p.hp=p.maxHp;  
-  leveled=true;  
-  guard++;  
- }  
- if(leveled){  
-  say('⭐ НОВЫЙ УРОВЕНЬ '+p.level+'! Здоровье восстановлено, характеристики выросли.');  
-  sfx('level');  
- }  
- return leveled;  
-}  
-  
-/* =========================================================  
-   8. СОЗДАНИЕ ВРАГОВ  
-   ========================================================= */  
-function makeEnemy(){  
- const base=ENEMIES[rand(0,ENEMIES.length-1)];  
- const hp=Math.round((base.hp+p.level*3.2)*(0.9+Math.random()*0.3));  
- return {  
-  name:base.name,  
-  emoji:base.emoji,  
-  hp:hp,  
-  maxHp:hp,  
-  dmg:base.dmg+Math.floor(p.level*0.7)+rand(0,1),  
-  isBoss:false,  
-  turnCount:0  
- };  
-}  
-  
-function pickBoss(){  
- const avail=BOSSES.filter(b=>b.minLevel<=p.level);  
- const pool=avail.length?avail:[BOSSES[0]];  
- return pool[p.bossWins%pool.length];  
-}  
-  
-function makeBoss(base){  
- const hp=Math.round(base.hp+p.level*4.5);  
- return {  
-  name:base.name,  
-  emoji:base.emoji,  
-  hp:hp,  
-  maxHp:hp,  
-  dmg:base.dmg+Math.floor(p.level*0.6),  
-  isBoss:true,  
-  turnCount:0  
- };  
-}  
-  
-/* =========================================================  
-   9. РЕНДЕР  
-   ========================================================= */  
-function refreshButtons(){  
- const on=!!enemy&&!busy;  
- ['bite','claw','guard'].forEach(id=>{ $(id).disabled=!on; });  
- $('special').disabled=!on||p.mutation<SPECIAL_COST;  
- $('special').classList.toggle('ready',on&&p.mutation>=SPECIAL_COST);  
- $('hunt').disabled=!!enemy||busy;  
- $('healBtn').disabled=!(p.dna>=2&&p.hp<p.maxHp);  
-}  
-  
-function updateBattleText(){  
- if(!enemy){  
-  $('battleTitle').textContent='Ты в безопасности';  
-  $('battleDesc').textContent='Найди противника, чтобы начать бой';  
-  $('battleStatus').textContent='● ОЖИДАНИЕ';  
-  return;  
- }  
- $('battleStatus').textContent='● БОЙ ИДЁТ';  
- if(busy){  
-  $('battleTitle').textContent='ХОД ПРОТИВНИКА';  
-  $('battleDesc').textContent='Приготовься к удару...';  
- }else{  
-  $('battleTitle').textContent='ТВОЙ ХОД';  
-  $('battleDesc').textContent='Выбери действие внизу';  
- }  
-}  
-  
-function renderStages(){  
- const el=$('stageList');  
- if(!el) return;  
- let html='';  
- for(let i=0;i<STAGES.length;i++){  
-  const s=STAGES[i];  
-  let cls='locked', stat='УР. '+s.levelReq+' · '+s.cost+' 🧬';  
-  if(i<p.evolution){ cls='done'; stat='ОТКРЫТО'; }  
-  else if(i===p.evolution){ cls='current'; stat='ТЕКУЩАЯ ФОРМА'; }  
-  html+='<div class="stage-row '+cls+'"><span class="em">'+s.emoji+'</span><span><b>'+s.name+'</b><br>'+stat+'</span></div>';  
- }  
- el.innerHTML=html;  
-}  
-  
-function renderEvo(){  
- const cur=STAGES[p.evolution];  
- $('evoEmoji').textContent=cur.emoji;  
- $('evoStage').textContent=cur.name;  
-  
- const next=STAGES[p.evolution+1];  
- const btn=$('evolve');  
-  
- if(!next){  
-  $('evoInfo').innerHTML='<b>МАКСИМАЛЬНАЯ ФОРМА ДОСТИГНУТА.</b><br>Ты — абсолютный мутант. Дальше только легенды.';  
-  btn.disabled=true;  
-  btn.textContent='МАКС. ЭВОЛЮЦИЯ';  
- }else{  
-  const ready=p.level>=next.levelReq&&p.dna>=next.cost;  
-  $('evoInfo').innerHTML=  
-   'Текущая стадия: <b>'+cur.name+'</b><br>'+  
-   'Следующая форма: <b>'+next.name+'</b><br>'+  
-   'Требуется: уровень <b>'+next.levelReq+'</b> и <b>'+next.cost+'</b> 🧬 ДНК<br>'+  
-   'Сейчас: уровень <b>'+p.level+'</b>, <b>'+p.dna+'</b> 🧬'+  
-   (ready?'<br><b style="color:#2f9e4f">ВСЁ ГОТОВО К МУТАЦИИ!</b>':'');  
-  btn.disabled=!ready;  
-  btn.textContent='🧬 ЭВОЛЮЦИОНИРОВАТЬ · '+next.cost+' 🧬';  
- }  
- renderStages();  
-}  
-  
-function renderMusicBtn(){  
- const btn=$('musicBtn');  
- const on=Music.isPlaying();  
- btn.textContent=on?'🔊':'🔇';  
- btn.classList.toggle('off',!on);  
-}  
-  
-function render(){  
- $('level').textContent=p.level;  
- $('levelTop').textContent=p.level;  
- $('xpText').textContent=p.xp+'/'+need();  
- $('xpBar').style.width=clamp(100*p.xp/need(),0,100)+'%';  
- $('dna').textContent=p.dna;  
- $('rankName').textContent='ЗЕД · '+stageName();  
- $('smallAvatar').textContent=stageEmoji();  
- $('myMonster').textContent=stageEmoji();  
- $('myHp').textContent='❤️ '+p.hp+'/'+p.maxHp;  
-  
- $('statHp').textContent=p.hp+'/'+p.maxHp;  
- $('strength').textContent=p.strength;  
- $('defense').textContent=p.defense;  
- $('mutation').textContent=Math.floor(p.mutation)+'%';  
- $('statWins').textContent=p.wins;  
- $('statBoss').textContent=p.bossWins;  
-  
- $('mutBar').style.width=clamp(p.mutation,0,100)+'%';  
- $('mutText').textContent=Math.floor(p.mutation)+'%';  
-  
- // ✅ ИСПРАВЛЕНО: показываем реальное число ударов в серии, а не +1  
- $('comboText').textContent = combo>1  
-   ? ('КОМБО ×'+combo+' (+'+(combo-1)+' к урону)')  
-   : '';  
-  
- if(enemy){  
-  $('foeMonster').textContent=enemy.emoji;  
-  $('foeName').textContent=enemy.name.toUpperCase();  
-  $('foeName').classList.toggle('boss',!!enemy.isBoss);  
-  $('foeHp').textContent='❤️ '+Math.max(0,Math.ceil(enemy.hp))+'/'+enemy.maxHp;  
- }else{  
-  $('foeMonster').textContent='❔';  
-  $('foeName').textContent='ПРОТИВНИК';  
-  $('foeName').classList.remove('boss');  
-  $('foeHp').textContent='❤️ —';  
- }  
-  
- renderEvo();  
- refreshButtons();  
- updateBattleText();  
-}  
-  
-/* =========================================================  
-   10. БОЙ  
-   ========================================================= */  
-function setBusy(v){  
- busy=v;  
- refreshButtons();  
- updateBattleText();  
-}  
-  
-function doAction(kind){  
- if(!enemy||busy) return;  
-  
- if(kind==='special'&&p.mutation<SPECIAL_COST){  
-  $('notice').textContent='Недостаточно мутации. Нужно '+SPECIAL_COST+'%.';  
-  return;  
- }  
-  
- setBusy(true);  
-  
- let dmg=0, crit=false, heal=0, msg='', fx='💥';  
-  
- if(kind==='bite'){  
-  dmg=Math.max(1,p.strength+rand(0,2)+combo);  
-  heal=Math.max(1,Math.floor(p.strength/5));  
-  addMutation(12);  
-  msg='🦷 Укус: '+dmg+' урона'+(heal?' (+'+heal+' HP)':'');  
-  fx='🦷';  
-  anim('you','bite',fx,0);  
-  sfx('hit');  
- }else if(kind==='claw'){  
-  dmg=p.strength+3+rand(0,3)+combo;  
-  crit=Math.random()<0.18;  
-  if(crit) dmg=Math.round(dmg*1.8);  
-  addMutation(8);  
-  msg=(crit?'⚡ КРИТ! Коготь: ':'👊 Коготь: ')+dmg+' урона';  
-  fx=crit?'⚡':'👊';  
-  anim('you','claw',fx,0);  
-  sfx(crit?'crit':'hit');  
- }else if(kind==='guard'){  
-  guarding=true;  
-  heal=2+Math.floor(p.maxHp*0.06);  
-  addMutation(20);  
-  combo=0;  
-  p.hp=Math.min(p.maxHp,p.hp+heal);  
-  msg='🛡️ Блок: следующая атака ослаблена, +'+heal+' HP';  
-  anim('you','guard','🛡️',0);  
-  spawnDamage(heal,'left',true);  
-  sfx('guard');  
- }else if(kind==='special'){  
-  addMutation(-SPECIAL_COST);  
-  dmg=Math.round(p.strength*2+6+rand(0,4))+combo*2;  
-  msg='🧬 МУТАЦИОННЫЙ УДАР: '+dmg+' урона!';  
-  fx='🧬';  
-  anim('you','special',fx,0);  
-  sfx('special');  
-  vibrate(30);  
- }  
-  
- // ✅ ИСПРАВЛЕНО: heal теперь реально применяется (раньше был +0)  
- // Для guard heal уже применён внутри блока выше — защищаемся условием.  
- if(kind!=='guard') p.hp=Math.min(p.maxHp,p.hp+heal);  
-  
- say(msg);  
- $('notice').textContent='';  
-  
- if(dmg){  
-  // комбо растёт до расчёта следующего удара  
-  combo=Math.min(4,combo+1);  
-  enemy.hp-=dmg;  
-  setTimeout(()=>{  
-   anim('foe','hit',fx,dmg);  
-   vibrate(18);  
-  },140);  
- }  
-  
- render();  
-  
- setTimeout(()=>{  
-  if(enemy&&enemy.hp<=0){ victory(); return; }  
-  enemyTurn();  
- },650);  
-}  
-  
-function enemyTurn(){  
- if(!enemy) return;  
-  
- const e=enemy;  
- e.turnCount++;  
-  
- const heavy=e.isBoss?(e.turnCount%3===0):(e.turnCount%4===0);  
-  
- let base=e.dmg+rand(0,2);  
- if(heavy) base=Math.round(base*1.8);  
-  
- let dmg=Math.max(1,base-Math.floor(p.defense*0.6));  
-  
- if(guarding){  
-  dmg=Math.max(1,Math.round(dmg*0.35));  
-  guarding=false;  
-  say('🛡️ Блок поглотил часть урона!');  
- }  
-  
- anim('foe','attack',heavy?'💥':'👊',0);  
- sfx('enemy');  
-  
- setTimeout(()=>{  
-  if(!enemy) return;  
-  anim('you','hit','💢',dmg);  
-  vibrate(40);  
-  p.hp=Math.max(0,p.hp-dmg);  
-  
-  // ✅ ИСПРАВЛЕНО: раньше combo=0 здесь убивал бонус комбо,  
-  // т.к. сбрасывался ПОСЛЕ каждого действия игрока ещё до его применения.  
-  // Теперь комбо сбивается только тяжёлым ударом.  
-  if(heavy) combo=0;  
-  
-  addMutation(8);  
-  say((heavy?'💢 ТЯЖЁЛЫЙ УДАР! ':'👹 Противник бьёт: ')+dmg+' урона');  
-  render();  
-  
-  if(p.hp<=0){ defeat(); return; }  
-  
-  setBusy(false);  
- },340);  
-}  
-  
-function victory(){  
- const e=enemy;  
- if(!e) return;  
-  
- enemy=null;  
- setBusy(false);  
- guarding=false;  
- combo=0;  
-  
- const baseXp=e.isBoss?(45+p.level*7):(10+Math.floor(Math.random()*8)+Math.floor(p.level*1.5));  
- const dnaGain=e.isBoss?12:(3+(Math.random()<0.25?2:0));  
-  
- p.xp+=baseXp;  
- p.dna+=dnaGain;  
- p.wins++;  
- if(e.isBoss){ p.bossWins++; p.lastBoss=p.wins; }  
- p.hp=Math.min(p.maxHp,p.hp+Math.ceil(p.maxHp*0.18));  
- addMutation(25);  
-  
- say((e.isBoss?'👑 БОСС ПОВЕРЖЕН! ':'🏆 Победа! ')+e.name+  
-     ' · +'+baseXp+' опыта, +'+dnaGain+' 🧬 ДНК');  
- $('notice').textContent=e.isBoss?'БОСС ПОВЕРЖЕН!':'Победа!';  
-  
- sfx('win');  
- levelUp();  
- save();  
- render();  
-}  
-  
-function defeat(){  
- const e=enemy;  
- enemy=null;  
- setBusy(false);  
- guarding=false;  
- combo=0;  
-  
- p.hp=Math.max(1,Math.floor(p.maxHp*0.35));  
- if(p.dna>0) p.dna-=1;  
-  
- say('💀 Ты проиграл бой'+(e?(' с '+e.name):'')+'. Потрачена 1 🧬 ДНК на восстановление.');  
- $('notice').textContent='Ты сбежал с поля боя.';  
-  
- sfx('lose');  
- save();  
- render();  
-}  
-  
-/* =========================================================  
-   11. КНОПКИ  
-   ========================================================= */  
-$('hunt').onclick=()=>{  
- if(enemy||busy) return;  
- if(p.hp<=0){  
-  $('notice').textContent='Нужно восстановить здоровье.';  
-  return;  
- }  
-  
- guarding=false;  
- combo=0;  
- $('notice').textContent='';  
-  
- const bossReady=(p.wins-p.lastBoss)>=BOSS_EVERY;  
-  
- if(bossReady){  
-  enemy=makeBoss(pickBoss());  
-  say('⚠️ БОСС! '+enemy.name+' преграждает путь!');  
-  $('notice').textContent='БОСС!';  
- }else{  
-  enemy=makeEnemy();  
-  say('⚠️ Появился противник: '+enemy.name+'.');  
- }  
-  
- render();  
- anim('foe','hit','❗',0);  
- setBusy(false);  
-};  
-  
-$('bite').onclick=()=>doAction('bite');  
-$('claw').onclick=()=>doAction('claw');  
-$('guard').onclick=()=>doAction('guard');  
-$('special').onclick=()=>doAction('special');  
-  
-$('healBtn').onclick=()=>{  
- if(p.dna<2||p.hp>=p.maxHp) return;  
- p.dna-=2;  
- p.hp=p.maxHp;  
- say('🍖 Здоровье полностью восстановлено за 2 🧬 ДНК.');  
- $('notice').textContent='Здоровье восстановлено!';  
- sfx('level');  
- save();  
- render();  
-};  
-  
-$('evolve').onclick=()=>{  
- const next=STAGES[p.evolution+1];  
- if(!next) return;  
- if(p.level<next.levelReq||p.dna<next.cost) return;  
-  
- p.dna-=next.cost;  
- p.evolution++;  
- p.maxHp+=12;  
- p.hp=p.maxHp;  
- p.strength+=3;  
- p.defense+=2;  
- addMutation(30);  
-  
- say('🧬 ЭВОЛЮЦИЯ! Новая форма: '+stageName()+'. Сила, защита и здоровье выросли.');  
- $('notice').textContent='Эволюция завершена!';  
- sfx('evolve');  
- vibrate([30,40,60]);  
- save();  
- render();  
-};  
-  
-/* =========================================================  
-   12. НАВИГАЦИЯ  
-   ========================================================= */  
-document.querySelectorAll('.navbtn').forEach(b=>{  
- b.onclick=()=>{  
-  document.querySelectorAll('.navbtn').forEach(x=>x.classList.toggle('active',x===b));  
-  document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.id===b.dataset.screen));  
-  render();  
- };  
-});  
-  
-/* =========================================================  
-   13. МУЗЫКА: КНОПКА + АВТОЗАПУСК ПО ЖЕСТУ  
-   ========================================================= */  
-$('musicBtn').onclick=(ev)=>{  
- ev.preventDefault();  
- ev.stopPropagation();  
- if(Music.isPlaying()){  
-  p.music=false;  
-  Music.stop();  
- }else{  
-  p.music=true;  
-  Music.start();  
- }  
- renderMusicBtn();  
- save();  
-};  
-  
-// Первый жест пользователя запускает музыку (политика автоплея мобильных браузеров)  
-document.addEventListener('pointerdown',(e)=>{  
- if(e.target&&e.target.closest&&e.target.closest('#musicBtn')) return;  
- if(p.music&&!Music.isPlaying()){  
-  Music.start();  
-  renderMusicBtn();  
- }  
-},{passive:true});  
-  
-// Пауза музыки при сворачивании вкладки  
-document.addEventListener('visibilitychange',()=>{  
- if(document.hidden){  
-  if(Music.isPlaying()){ Music.stop(); }  
- }else{  
-  if(p.music){ Music.start(); }  
-  renderMusicBtn();  
- }  
-});  
-  
-/* =========================================================  
-   14. СТАРТ  
-   ========================================================= */  
-function boot(){  
- renderMusicBtn();  
- render();  
- say('[СИСТЕМА] Загрузка завершена. Уровень '+p.level+', форма: '+stageName()+'.');  
- if(p.wins>0) say('[СИСТЕМА] Побед: '+p.wins+' · боссов повержено: '+p.bossWins+'.');  
-}  
-  
-boot();  
-</script>  </body>  
- </html>
+function calcEnemyDamage(enemyAtk){
+ let dmg = enemyAtk;
+ let def = p.defense;
+ const defDown=listOf('player').find(e=>e.kind==='defDown');
+ if(defDown) def *= (1-defDown.power);
+ dmg -= Math.floor(def*0.6);
+ const defUp=listOf('player').find(e=>e.kind==='defUp');
+ if(defUp) dmg *= (1-defUp.power);
+ const dodge=listOf('player').find(e=>e.kind==='dodge');
+ const dodgeChance = Math.min(50, (dodge?dodge.power:0) + branchBonus().spd);
+ if(Math.random()<dodgeChance/100){ return {dmg:0,miss:true}; }
+ dmg = Math.max(1, Math.round(dmg));
+ return {dmg,miss:false};
+}
+
+/* =========================================================
+   12. РЕНДЕР
+   ========================================================= */
+function renderEffectsBar(){
+ const bar=$('effectsBar');
+ if(!bar) return;
+ if(!enemy){ bar.innerHTML=''; return; }
+ const chips=[];
+ const pfx=listOf('player');
+ const efx=listOf('enemy');
+ const mapName={
+  burn:'🔥 Горение', poison:'☠️ Яд', shock:'⚡ Шок', stun:'💫 Оглушение',
+  defDown:'📉 -защ', defUp:'🛡️ +защ', atkUp:'💢 +атака', dodge:'💨 Уклон'
+ };
+ pfx.forEach(e=>{ chips.push('<span class="fx-chip buff">'+ (mapName[e.kind]||e.kind)+' '+e.dur+'х</span>'); });
+ efx.forEach(e=>{
+  const dot=(e.kind==='burn'||e.kind==='poison'||e.kind==='shock');
+  const cls=dot?'dot':'debuff';
+  chips.push('<span class="fx-chip '+cls+'">'+ (mapName[e.kind]||e.kind)+' '+e.dur+'х</span>');
+ });
+ bar.innerHTML=chips.join('');
+}
+
+function renderAbilities(){
+ const set=getAbilitySet();
+ const slots=['fast','strong','special'];
+ const els={fast:$('abFast'),strong:$('abStrong'),special:$('abSpecial')};
+ slots.forEach(slot=>{
+  const el=els[slot];
+  if(!el) return;
+  const ab=set[slot];
+  if(!ab) return;
+  const ico=el.querySelector('.ab-ico');
+  const nameEl=el.querySelector('.ab-name');
+  const descEl=el.querySelector('.ab-desc');
+  const tagEl=el.querySelector('.ab-tag');
+  if(ico) ico.textContent=ab.ico;
+  if(nameEl) nameEl.textContent=ab.name;
+  if(descEl) descEl.textContent=ab.desc||'';
+  if(tagEl){
+   if(slot==='fast') tagEl.textContent='БЫСТРАЯ';
+   else if(slot==='strong') tagEl.textContent='СИЛЬНАЯ · КД '+ab.cd;
+   else tagEl.textContent='ОСОБАЯ · КД '+ab.cd;
+  }
+  const cdLeft=cd?cd[slot]:0;
+  const cooling=cdLeft>0;
+  el.classList.toggle('cooling',cooling);
+  const cdEl=el.querySelector('.ab-cd');
+  if(cdEl) cdEl.innerHTML='<b>'+cdLeft+'</b><small>ХОД</small>';
+  let enabled=!!enemy&&!busy&&!cooling;
+  /* ИСПРАВЛЕНО: special требует SPECIAL_COST мутации */
+  if(slot==='special' && p.mutation < SPECIAL_COST) enabled=false;
+  el.disabled=!enabled;
+ });
+}
+
+function refreshButtons(){
+ $('hunt').disabled = !!enemy || busy;
+ $('healBtn').disabled=!(p.dna>=2&&p.hp<p.maxHp);
+ renderAbilities();
+}
+
+function updateBattleText(){
+ if(!enemy){
+  $('battleTitle').textContent='Ты в безопасности';
+  $('battleDesc').textContent='Найди противника, чтобы начать бой';
+  $('battleStatus').textContent='● ОЖИДАНИЕ';
+  return;
+ }
+ $('battleStatus').textContent='● БОЙ ИДЁТ';
+ if(busy){
+  $('battleTitle').textContent='ХОД ПРОТИВНИКА';
+  $('battleDesc').textContent='Приготовься к удару...';
+ }else{
+  $('battleTitle').textContent='ТВОЙ ХОД';
+  $('battleDesc').textContent='Выбери способность';
+ }
+}
+
+function renderStages(){
+ const el=$('stageList');
+ if(!el) return;
+ let html='';
+ if(!p.evoBranch){
+  for(let i=0;i<STAGES.length;i++){
+   const s=STAGES[i];
+   let cls='locked',stat='УР. '+s.levelReq+' · '+s.cost+' 🧬';
+   if(i<p.evolution){ cls='done'; stat='ОТКРЫТО'; }
+   else if(i===p.evolution){ cls='current'; stat='ТЕКУЩАЯ ФОРМА'; }
+   html+='<div class="stage-row '+cls+'"><span class="em">'+s.emoji+'</span><span><b>'+s.name+'</b><br>'+stat+'</span></div>';
+  }
+ }else{
+  const b=BRANCHES[p.evoBranch];
+  for(let i=0;i<b.stages.length;i++){
+   const s=b.stages[i];
+   let cls='locked',stat='СТАДИЯ '+(i+1)+' · '+s.ability;
+   if(i+1<p.evoStage){ cls='done'; stat='ОТКРЫТО'; }
+   else if(i+1===p.evoStage){ cls='current'; stat='ТЕКУЩАЯ ФОРМА'; }
+   html+='<div class="stage-row '+cls+'"><span class="em">'+s.emoji+'</span><span><b>'+s.name+'</b><br>'+stat+'</span></div>';
+  }
+ }
+ el.innerHTML=html;
+}
+
+function renderEvo(){
+ const f=currentForm();
+ $('evoEmoji').textContent=f.emoji;
+ $('evoStage').textContent=f.name;
+ const btn=$('evoOpenBtn');
+ let info='';
+ if(!p.evoBranch){
+  const unlocked=canOpenEvo();
+  info='Выбери ветку эволюции: <b>Сила</b>, <b>Ум</b> или <b>Скорость</b>.<br>'+
+       'Открывается на <b>'+EVO_UNLOCK_LEVEL+'</b> уровне и <b>'+EVO_UNLOCK_DNA+'</b> 🧬 ДНК.<br>'+
+       'Сейчас: уровень <b>'+p.level+'</b>, <b>'+p.dna+'</b> 🧬'+
+       (unlocked?'<br><b style="color:#2f9e4f">ВСЁ ГОТОВО!</b>':'');
+  btn.disabled=!unlocked;
+  btn.textContent=unlocked?'🧬 ВЫБРАТЬ ВЕТКУ':'🔒 НУЖЕН УРОВЕНЬ '+EVO_UNLOCK_LEVEL+' И '+EVO_UNLOCK_DNA+' 🧬';
+ }else{
+  const next=p.evoStage<4?BRANCHES[p.evoBranch].stages[p.evoStage]:null;
+  if(!next){
+   info='<b>МАКСИМАЛЬНАЯ СТАДИЯ ВЕТКИ ДОСТИГНУТА.</b><br>Форма: <b>'+f.name+'</b>. Дальше только легенды.';
+   btn.disabled=true;
+   btn.textContent='МАКС. ЭВОЛЮЦИЯ';
+  }else{
+   const reqLevel=[0,3,6,10][p.evoStage];
+   const reqDna=[0,15,35,60][p.evoStage];
+   const ready=p.level>=reqLevel&&p.dna>=reqDna;
+   info='Ветка: <b>'+BRANCHES[p.evoBranch].name+' · '+BRANCHES[p.evoBranch].attr+'</b><br>'+
+        'Текущая стадия: <b>'+f.name+'</b> ('+p.evoStage+'/4)<br>'+
+        'Следующая: <b>'+next.name+'</b> — '+next.ability+'<br>'+
+        'Требуется: уровень <b>'+reqLevel+'</b> и <b>'+reqDna+'</b> 🧬<br>'+
+        'Сейчас: уровень <b>'+p.level+'</b>, <b>'+p.dna+'</b> 🧬'+
+        (ready?'<br><b style="color:#2f9e4f">ВСЁ ГОТОВО К МУТАЦИИ!</b>':'');
+   btn.disabled=!ready;
+   btn.textContent=ready?('🧬 МУТИРОВАТЬ · '+reqDna+' 🧬'):('🔒 НУЖЕН УР. '+reqLevel+' И '+reqDna+' 🧬');
+  }
+ }
+ $('evoInfo').innerHTML=info;
+
+ const abl=$('abilityLog');
+ const set=getAbilitySet();
+ const header = p.evoBranch ? ('СПОСОБНОСТИ ('+f.name+'):') : 'БАЗОВЫЕ СПОСОБНОСТИ:';
+ const lines=[header];
+ lines.push('• '+set.fast.ico+' '+set.fast.name+' — '+set.fast.desc);
+ lines.push('• '+set.strong.ico+' '+set.strong.name+' — '+set.strong.desc);
+ lines.push('• '+set.special.ico+' '+set.special.name+' — '+set.special.desc+(p.mutation<SPECIAL_COST?' (нужно '+SPECIAL_COST+'% мутации)':''));
+ abl.textContent=lines.join('\n');
+ renderStages();
+}
+
+function renderMusicBtn(){
+ const btn=$('musicBtn');
+ const on=Music.isPlaying();
+ btn.textContent=on?'🔊':'🔇';
+ btn.classList.toggle('off',!on);
+}
+
+function render(){
+ $('level').textContent=p.level;
+ $('levelTop').textContent=p.level;
+ $('xpText').textContent=p.xp+'/'+need();
+ $('xpBar').style.width=clamp(100*p.xp/need(),0,100)+'%';
+ $('dna').textContent=p.dna;
+ $('rankName').textContent='ЗЕД · '+stageName();
+ $('smallAvatar').textContent=stageEmoji();
+ $('myMonster').textContent=stageEmoji();
+ $('myHp').textContent='❤️ '+p.hp+'/'+p.maxHp;
+
+ const yf=$('youFighter');
+ yf.className='fighter you'+(p.evoBranch?(' aura-'+p.evoBranch):'');
+
+ $('statHp').textContent=p.hp+'/'+p.maxHp;
+ $('strength').textContent=p.strength;
+ $('defense').textContent=p.defense;
+ $('mutation').textContent=Math.floor(p.mutation)+'%';
+ $('statWins').textContent=p.wins;
+ $('statBoss').textContent=p.bossWins;
+
+ const f=currentForm();
+ $('statAttr').textContent=f.attr||'—';
+ $('statStage').textContent=(p.evoBranch?p.evoStage:'1')+'/4';
+
+ $('mutBar').style.width=clamp(p.mutation,0,100)+'%';
+ $('mutText').textContent=Math.floor(p.mutation)+'%';
+
+ $('comboText').textContent = combo>1 ? ('КОМБО ×'+combo+' (+'+(combo-1)+' к урону)') : '';
+
+ const arena=$('arena');
+ if(enemy){
+  $('foeMonster').textContent=enemy.emoji;
+  $('foeName').textContent=enemy.name.toUpperCase();
+  $('foeName').classList.toggle('boss',!!enemy.isBoss);
+  $('foeHp').textContent='❤️ '+Math.max(0,Math.ceil(enemy.hp))+'/'+enemy.maxHp;
+  $('foeFighter').className='fighter foe';
+  arena.classList.toggle('boss-arena', !!enemy.isBoss);
+ }else{
+  $('foeMonster').textContent='❔';
+  $('foeName').textContent='ПРОТИВНИК';
+  $('foeName').classList.remove('boss');
+  $('foeHp').textContent='❤️ —';
+  arena.classList.remove('boss-arena');
+ }
+
+ renderEffectsBar();
+ renderEvo();
+ refreshButtons();
+ updateBattleText();
+}
+
+/* =========================================================
+   13. БОЙ
+   ========================================================= */
+function setBusy(v){ busy=v; refreshButtons(); updateBattleText(); }
+
+function startCooldown(slot, turns){
+ if(!cd) resetCooldowns();
+ cd[slot]=turns;
+}
+
+function tickCooldowns(){
+ if(!cd) resetCooldowns();
+ ['fast','strong','special'].forEach(k=>{ if(cd[k]>0) cd[k]-=1; });
+}
+
+function doAbility(slot){
+ if(!enemy||busy) return;
+ const set=getAbilitySet();
+ const ab=set[slot];
+ if(!ab) return;
+ if(cd&&cd[slot]>0) return;
+ /* ИСПРАВЛЕНО: special требует SPECIAL_COST мутации */
+ if(slot==='special' && p.mutation < SPECIAL_COST){
+  $('notice').textContent='Недостаточно мутации: нужно '+SPECIAL_COST+'%.';
+  return;
+ }
+ setBusy(true);
+
+ const fxIcon=ab.fx||'💥';
+ const animKind=(ab.anim||'attack-claw').replace('attack-','');
+ const flashType=ab.flash;
+ const multiEff=(ab.effects||[]).find(e=>e.kind==='multiHit');
+ const hits=multiEff?multiEff.hits:1;
+ const isBuffOnly = (ab.dmgMul===0);
+ const lifestealEff=(ab.effects||[]).find(e=>e.kind==='lifesteal');
+
+ if(isBuffOnly){
+  /* Бафф-способность: накладывает эффекты на игрока */
+  (ab.effects||[]).forEach(e=>{ if(e.kind!=='multiHit') addEffect('player',e); });
+  anim('you',animKind,fxIcon,0,{flash:flashType});
+  say('✨ '+ab.name+' активирована.');
+  if(flashType==='fire') sfx('fire');
+  else if(flashType==='poison') sfx('poison');
+  else if(flashType==='electric') sfx('electric');
+  else sfx('cast');
+  startCooldown(slot,ab.cd);
+  if(slot==='special') addMutation(-SPECIAL_COST);
+  addMutation(5);
+  combo=0;
+  render();
+  setTimeout(()=>{ if(enemy) enemyTurn(); }, 700);
+  return;
+ }
+
+ /* Атакующая способность */
+ let totalDmg=0, isCritAny=false, heal=0;
+ for(let h=0;h<hits;h++){
+  const c=calcPlayerDamage(ab);
+  totalDmg+=c.dmg;
+  if(c.isCrit) isCritAny=true;
+ }
+ /* Накладываем эффекты на цель/игрока */
+ (ab.effects||[]).forEach(e=>{
+  if(e.kind==='multiHit'||e.kind==='lifesteal'||e.kind==='pierceDef') return;
+  if(e.kind==='atkUp'||e.kind==='defUp'||e.kind==='dodge'){
+   /* ИСПРАВЛЕНО: dodge теперь накладывается на игрока в атакующих способностях */
+   addEffect('player',e);
+  }else{
+   addEffect('enemy',e);
+  }
+ });
+
+ if(lifestealEff){
+  heal=Math.max(1,Math.round(totalDmg*lifestealEff.power));
+ }
+ if(ab.regen) heal+=ab.regen;
+
+ enemy.hp-=totalDmg;
+ combo=Math.min(4,combo+1);
+ addMutation(8+(multiEff?8:0));
+ if(slot==='special') addMutation(-SPECIAL_COST);
+
+ const effDesc=(ab.effects||[]).filter(e=>e.kind!=='multiHit'&&e.kind!=='lifesteal'&&e.kind!=='pierceDef').map(e=>{
+  if(e.kind==='burn') return '🔥 поджог';
+  if(e.kind==='poison') return '☠️ яд';
+  if(e.kind==='shock') return '⚡ шок';
+  if(e.kind==='stun') return '💫 стан '+e.dur+'х';
+  if(e.kind==='defDown') return '📉 -'+Math.round(e.power*100)+'% защ.';
+  if(e.kind==='atkUp') return '💢 +'+Math.round(e.power*100)+'% атаки';
+  if(e.kind==='defUp') return '🛡️ +'+Math.round(e.power*100)+'% защ.';
+  if(e.kind==='dodge') return '💨 +'+e.power+'% уклон';
+  return e.kind;
+ });
+ let msg = ab.ico+' '+ab.name+': '+totalDmg+' урона';
+ if(hits>1) msg='⚡ '+ab.name+' ×'+hits+': '+totalDmg+' урона';
+ if(isCritAny) msg='💥 КРИТ! '+msg;
+ if(effDesc.length) msg+=' ('+effDesc.join(', ')+')';
+ if(heal) msg+=' · +'+heal+' HP';
+ say(msg);
+ if(heal){ p.hp=Math.min(p.maxHp,p.hp+heal); spawnDamage(heal,'left',true); sfx('heal'); }
+
+ anim('you',animKind,fxIcon,0,{flash:flashType,crit:isCritAny});
+
+ setTimeout(()=>{
+  if(!enemy) return;
+  anim('foe','hit',fxIcon,0);
+  spawnDamage(totalDmg,'right',false,{crit:isCritAny});
+  if(isCritAny) sfx('crit'); else sfx('hit');
+  if(hits>1) sfx('multi');
+  if(flashType==='fire') sfx('fire');
+  else if(flashType==='poison') sfx('poison');
+  else if(flashType==='electric') sfx('electric');
+  if(ab.shakeStrong) shakeArena(true);
+  vibrate(isCritAny?30:18);
+ },140);
+
+ startCooldown(slot,ab.cd);
+ render();
+
+ setTimeout(()=>{
+  if(!enemy) return;
+  if(enemy.hp<=0){ victory(); return; }
+  enemyTurn();
+ },700);
+}
+
+/* =========================================================
+   14. ХОД ВРАГА
+   ========================================================= */
+function enemyTurn(){
+ if(!enemy) return;
+ const e=enemy;
+
+ /* Тик эффектов врага */
+ const eTick=tickEffects('enemy');
+ if(eTick.dotDamage){
+  e.hp-=eTick.dotDamage;
+  spawnDamage(eTick.dotDamage,'right',false,{dot:true});
+  if(eTick.messages.length) say('На врага: '+eTick.messages.join(' '));
+  render();
+  if(e.hp<=0){ victory(); return; }
+ }
+
+ /* Тик эффектов игрока */
+ const pTick=tickEffects('player');
+ if(pTick.dotDamage){
+  p.hp=Math.max(0,p.hp-pTick.dotDamage);
+  spawnDamage(pTick.dotDamage,'left',false,{dot:true});
+  if(pTick.messages.length) say('На тебя: '+pTick.messages.join(' '));
+  render();
+  if(p.hp<=0){ defeat(); return; }
+ }
+
+ /* Стан */
+ if(eTick.skipTurn){
+  say('💫 '+e.name+' оглушён и пропускает ход!');
+  sfx('stun');
+  spawnParticle('💫','right');
+  tickCooldowns();
+  setBusy(false);
+  render();
+  return;
+ }
+
+ /* Враг атакует */
+ e.turnCount++;
+ const roll=Math.random();
+ let kind='normal';
+ if(e.isBoss){
+  if(e.turnCount%3===0) kind='heavy';
+  else if(roll<0.15) kind='poison';
+ }else{
+  if(e.turnCount%4===0) kind='heavy';
+  else if(roll<0.15) kind='poison';
+  else if(roll<0.25 && e.turnCount%2===0) kind='guard';
+ }
+
+ let base=e.dmg+rand(0,2);
+ let dmgMul=1, dotEffect=null, guardSelf=false;
+ if(kind==='heavy'){ dmgMul=1.8; }
+ else if(kind==='poison'){ dmgMul=0.9; dotEffect={kind:'poison',power:0.10,dur:2}; }
+ else if(kind==='guard'){ guardSelf=true; }
+
+ const result=calcEnemyDamage(Math.round(base*dmgMul));
+
+ if(kind==='heavy') anim('foe','enemy-heavy','💥',0);
+ else anim('foe','attack',kind==='poison'?'☠️':'👊',0);
+ if(kind==='heavy') shakeArena(true); else shakeArena(false);
+ if(kind==='poison') sfx('poison'); else if(kind==='heavy') sfx('heavy'); else sfx('enemy');
+
+ if(guardSelf){
+  addEffect('enemy',{kind:'defUp',power:0.4,dur:2});
+  say('🛡️ '+e.name+' защищается, снижая входящий урон.');
+  render();
+  tickCooldowns();
+  setBusy(false);
+  return;
+ }
+
+ setTimeout(()=>{
+  if(!enemy) return;
+  if(result.miss){
+   anim('you','miss','💨',0);
+   spawnFx('💨','left');
+   say('💨 Ты уклонился от атаки '+e.name+'!');
+   sfx('miss');
+  }else{
+   anim('you','hit','💢',0);
+   p.hp=Math.max(0,p.hp-result.dmg);
+   spawnDamage(result.dmg,'left',false);
+   vibrate(40);
+   if(kind==='heavy'){ combo=0; say('💢 ТЯЖЁЛЫЙ УДАР! '+e.name+': '+result.dmg+' урона'); }
+   else if(kind==='poison'){ say('☠️ '+e.name+' отравляет: '+result.dmg+' урона + яд'); }
+   else { say('👹 '+e.name+' бьёт: '+result.dmg+' урона'); }
+   if(dotEffect){ addEffect('player',dotEffect); }
+  }
+  addMutation(6);
+  tickCooldowns();
+  render();
+  if(p.hp<=0){ defeat(); return; }
+  setBusy(false);
+ },340);
+}
+
+/* =========================================================
+   15. ПОБЕДА / ПОРАЖЕНИЕ
+   ========================================================= */
+function victory(){
+ const e=enemy;
+ if(!e) return;
+ enemy=null;
+ setBusy(false);
+ combo=0;
+ resetEffects();
+ resetCooldowns();
+
+ const foeFighter=$('foeFighter');
+ if(foeFighter){
+  foeFighter.classList.add('death');
+  setTimeout(()=>foeFighter.classList.remove('death'),1000);
+ }
+ sfx('death');
+ /* Возврат к спокойной теме */
+ Music.setTheme('explore');
+
+ const baseXp=e.isBoss?(45+p.level*7):(10+Math.floor(Math.random()*8)+Math.floor(p.level*1.5));
+ const dnaGain=e.isBoss?12:(3+(Math.random()<0.25?2:0));
+
+ p.xp+=baseXp;
+ p.dna+=dnaGain;
+ p.wins++;
+ if(e.isBoss){ p.bossWins++; p.lastBoss=p.wins; }
+ p.hp=Math.min(p.maxHp,p.hp+Math.ceil(p.maxHp*0.18));
+ addMutation(15);
+
+ say((e.isBoss?'👑 БОСС ПОВЕРЖЕН! ':'🏆 Победа! ')+e.name+
+     ' · +'+baseXp+' опыта, +'+dnaGain+' 🧬 ДНК');
+ $('notice').textContent=e.isBoss?'БОСС ПОВЕРЖЕН!':'Победа!';
+
+ sfx('win');
+ levelUp();
+ checkEvoUnlock();
+ save();
+ render();
+}
+
+function defeat(){
+ const e=enemy;
+ enemy=null;
+ setBusy(false);
+ combo=0;
+ resetEffects();
+ resetCooldowns();
+ Music.setTheme('explore');
+
+ /* ИСПРАВЛЕНО: проигрыш больше не лечит до 35% — только 1 HP */
+ p.hp=1;
+ if(p.dna>0) p.dna-=1;
+
+ say('💀 Ты проиграл бой'+(e?(' с '+e.name):'')+'. Потрачена 1 🧬 ДНК.');
+ $('notice').textContent='Восстановись и попробуй снова.';
+ sfx('lose');
+ save();
+ render();
+}
+
+/* =========================================================
+   16. КНОПКИ БОЯ
+   ========================================================= */
+$('hunt').onclick=()=>{
+ if(enemy||busy) return;
+ if(p.hp<=0){ $('notice').textContent='Нужно восстановить здоровье.'; return; }
+ combo=0; $('notice').textContent='';
+ resetEffects();
+ resetCooldowns();
+
+ const bossReady=(p.wins-p.lastBoss)>=BOSS_EVERY;
+ if(bossReady){
+  enemy=makeBoss(pickBoss());
+  say('⚠️ БОСС! '+enemy.name+' преграждает путь!');
+  $('notice').textContent='БОСС!';
+  Music.setTheme('boss');
+ }else{
+  enemy=makeEnemy();
+  say('⚠️ Появился противник: '+enemy.name+'.');
+  Music.setTheme('battle');
+ }
+ render();
+ anim('foe','hit','❗',0);
+ setBusy(false);
+};
+
+$('abFast').onclick=()=>doAbility('fast');
+$('abStrong').onclick=()=>doAbility('strong');
+$('abSpecial').onclick=()=>doAbility('special');
+
+$('healBtn').onclick=()=>{
+ if(p.dna<2||p.hp>=p.maxHp) return;
+ p.dna-=2; p.hp=p.maxHp;
+ say('🍖 Здоровье полностью восстановлено за 2 🧬 ДНК.');
+ $('notice').textContent='Здоровье восстановлено!';
+ sfx('heal');
+ save(); render();
+};
+
+/* =========================================================
+   17. ЭВОЛЮЦИЯ
+   ========================================================= */
+function canOpenEvo(){
+ if(p.evoBranch) return true;
+ return p.level>=EVO_UNLOCK_LEVEL&&p.dna>=EVO_UNLOCK_DNA;
+}
+function checkEvoUnlock(){
+ if(!p.evoBranch&&p.level>=EVO_UNLOCK_LEVEL&&p.dna>=EVO_UNLOCK_DNA){
+  say('🧬 ДРЕВО ЭВОЛЮЦИИ ОТКРЫТО! Зайди в лабораторию и выбери ветку.');
+  $('notice').textContent='Эволюция доступна!';
+ }
+}
+
+function openEvoModal(){
+ if(!canOpenEvo()) return;
+ selectedBranch=null;
+ $('evoConfirm').classList.remove('show');
+ $('evoConfirm').textContent='';
+ $('evoConfirmBtn').disabled=true;
+ $('mCurStage').textContent=currentForm().name;
+ $('mCurBranch').textContent=p.evoBranch?BRANCHES[p.evoBranch].name:'НЕ ВЫБРАНА';
+ renderBranchList();
+ $('evoModal').classList.add('open');
+}
+function closeEvoModal(){ $('evoModal').classList.remove('open'); selectedBranch=null; }
+
+function renderBranchList(){
+ const list=$('branchList');
+ let html='';
+ Object.keys(BRANCHES).forEach(key=>{
+  const b=BRANCHES[key];
+  const locked=!!p.evoBranch&&p.evoBranch!==key;
+  const selected=selectedBranch===key;
+  const isCur=p.evoBranch===key;
+  let stageNow=isCur?p.evoStage:1;
+  let stageline='';
+  for(let i=1;i<=4;i++){
+   stageline+='<i class="'+(i<=stageNow?'on':'')+'"></i>';
+  }
+  html+='<div class="branch '+(selected?'sel':'')+(locked?' locked':'')+'" data-branch="'+key+'">'+
+   '<div class="bhead"><div class="bemoji">'+b.emoji+'</div>'+
+   '<div><div class="btitle">'+b.name+'</div>'+
+   '<span class="battr '+b.attrClass+'">'+b.attr+'</span></div></div>'+
+   '<p>'+b.desc+'</p>'+
+   '<ul>'+
+    b.stages.map((s,i)=>'<li><b>'+s.name+'</b> — '+s.ability+(i===0?' (старт)':'')+'</li>').join('')+
+   '</ul>'+
+   '<div class="stageline">'+stageline+'</div>'+
+   (locked?'<p style="color:#a16d18;font-weight:bold">Ветка недоступна — выбрана другая.</p>':'')+
+   '</div>';
+ });
+ list.innerHTML=html;
+ list.querySelectorAll('.branch').forEach(el=>{
+  el.onclick=()=>{
+   const key=el.dataset.branch;
+   if(p.evoBranch&&p.evoBranch!==key) return;
+   selectedBranch=key;
+   renderBranchList();
+   showConfirm();
+  };
+ });
+}
+
+function showConfirm(){
+ if(!selectedBranch) return;
+ const b=BRANCHES[selectedBranch];
+ const conf=$('evoConfirm');
+ conf.classList.add('show');
+ conf.innerHTML='<b>ВНИМАНИЕ!</b> Ты выбираешь ветку <b>'+b.name+' ('+b.attr+')</b>.<br>'+
+  'После подтверждения изменить ветку будет <b>НЕВОЗМОЖНО</b>.<br>'+
+  'Продолжить?';
+ $('evoConfirmBtn').disabled=false;
+}
+
+function confirmEvolution(){
+ if(!selectedBranch) return;
+ const b=BRANCHES[selectedBranch];
+ if(!p.evoBranch){
+  if(p.level<EVO_UNLOCK_LEVEL||p.dna<EVO_UNLOCK_DNA) return;
+  p.dna-=EVO_UNLOCK_DNA;
+  p.evoBranch=selectedBranch;
+  p.evoStage=1;
+  say('🧬 ВЫБРАНА ВЕТКА: '+b.name+' ('+b.attr+'). Путь назад закрыт.');
+ }else if(p.evoBranch===selectedBranch){
+  const nextStage=p.evoStage+1;
+  if(nextStage>4) return;
+  const reqLevel=[0,3,6,10][p.evoStage];
+  const reqDna=[0,15,35,60][p.evoStage];
+  if(p.level<reqLevel||p.dna<reqDna) return;
+  p.dna-=reqDna;
+  p.evoStage=nextStage;
+  const form=b.stages[p.evoStage-1];
+  p.maxHp+=15; p.hp=p.maxHp; p.strength+=3; p.defense+=1;
+  addMutation(30);
+  say('🧬 СТАДИЯ '+p.evoStage+'/4: '+form.name+'! Способность: '+form.ability);
+  $('notice').textContent='Эволюция: '+form.name;
+  sfx('evolve');
+  vibrate([30,40,60]);
+  const ef=$('evoFlash');
+  ef.classList.remove('on'); void ef.offsetWidth; ef.classList.add('on');
+  setTimeout(()=>ef.classList.remove('on'),1200);
+ }else{
+  $('evoConfirm').innerHTML='<b style="color:#b33">Смена ветки невозможна!</b>';
+  $('evoConfirmBtn').disabled=true;
+  return;
+ }
+
+ save();
+ render();
+ $('mCurStage').textContent=currentForm().name;
+ $('mCurBranch').textContent=p.evoBranch?BRANCHES[p.evoBranch].name:'НЕ ВЫБРАНА';
+ closeEvoModal();
+}
+
+$('evoOpenBtn').onclick=()=>{
+ if(!p.evoBranch){
+  if(!canOpenEvo()) return;
+  openEvoModal();
+ }else{
+  openEvoModal();
+ }
+};
+$('evoCancel').onclick=()=>closeEvoModal();
+$('evoConfirmBtn').onclick=()=>confirmEvolution();
+
+$('evoModal').addEventListener('click',(e)=>{
+ if(e.target===$('evoModal')) closeEvoModal();
+});
+
+/* =========================================================
+   18. НАВИГАЦИЯ
+   ========================================================= */
+document.querySelectorAll('.navbtn').forEach(b=>{
+ b.onclick=()=>{
+  document.querySelectorAll('.navbtn').forEach(x=>x.classList.toggle('active',x===b));
+  document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.id===b.dataset.screen));
+  render();
+ };
+});
+
+/* =========================================================
+   19. МУЗЫКА
+   ========================================================= */
+$('musicBtn').onclick=(ev)=>{
+ ev.preventDefault(); ev.stopPropagation();
+ if(Music.isPlaying()){ p.music=false; Music.stop(); }
+ else{ p.music=true; Music.start(); }
+ renderMusicBtn(); save();
+};
+document.addEventListener('pointerdown',(e)=>{
+ if(e.target&&e.target.closest&&e.target.closest('#musicBtn')) return;
+ if(p.music&&!Music.isPlaying()){ Music.start(); renderMusicBtn(); }
+},{passive:true});
+document.addEventListener('visibilitychange',()=>{
+ if(document.hidden){ if(Music.isPlaying()) Music.stop(); }
+ else{ if(p.music) Music.start(); renderMusicBtn(); }
+});
+
+/* =========================================================
+   20. СТАРТ
+   ========================================================= */
+function boot(){
+ resetEffects();
+ resetCooldowns();
+ Music.setTheme('explore');
+ renderMusicBtn();
+ render();
+ say('[СИСТЕМА] Загрузка завершена. Уровень '+p.level+', форма: '+stageName()+'.');
+ if(p.wins>0) say('[СИСТЕМА] Побед: '+p.wins+' · боссов повержено: '+p.bossWins+'.');
+ if(p.evoBranch) say('[СИСТЕМА] Ветка: '+BRANCHES[p.evoBranch].name+' · стадия '+p.evoStage+'/4.');
+ checkEvoUnlock();
+}
+boot();
+</script>
+</body>
+  </html>
